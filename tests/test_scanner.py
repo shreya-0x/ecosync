@@ -59,3 +59,36 @@ def test_confirm_classification(client):
     data = response.get_json()
     assert data["status"] == "success"
     assert "batch_id" in data
+
+def test_person_class_resolution(client):
+    from services.waste_detector import CLASSES_17_SPECS
+    assert "person" in CLASSES_17_SPECS
+    res = CLASSES_17_SPECS["person"]
+    assert res["is_waste"] is False
+    assert res["suggested_category"] == "Uncategorized"
+    assert res["co2e_factor"] == 0.0
+
+def test_reject_person_confirmation(client):
+    # Attempting to confirm a Person into the waste ledger must be rejected
+    response = client.post("/api/classifications/confirm", json={
+        "detection_batch_id": "TEST-PERSON-001",
+        "confirmed_category": "Uncategorized",
+        "sub_type": "Person (Citizen / User)",
+        "estimated_weight_kg": 70.0
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["status"] == "error"
+    assert "Non-waste entities cannot be logged" in data["message"]
+
+    # Household scan endpoint must also reject person
+    h_response = client.post("/api/household/scans", json={
+        "item_name": "Person (Citizen / User)",
+        "category": "Uncategorized",
+        "estimated_weight_kg": 0.0
+    })
+    assert h_response.status_code == 400
+    h_data = h_response.get_json()
+    assert h_data["status"] == "error"
+    assert "Non-waste entities cannot be logged" in h_data["message"]
+

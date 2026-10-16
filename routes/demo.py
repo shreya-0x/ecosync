@@ -1,9 +1,10 @@
 """
-EcoSync Demo Management Blueprint
-Provides endpoints for Judges & Hackathon Evaluators:
+EcoSync Platform Evaluation Blueprint
+Provides endpoints for Executive Evaluators & Municipal Stakeholders:
 - Demo status & record segregation
-- Guided 60-second walkthrough steps
+- Guided executive walkthrough steps
 - Demo data reset & baseline re-seeding
+- Clean operational mode initialization
 - Preset scenarios for Digital Twin
 """
 
@@ -38,6 +39,21 @@ def get_demo_status():
         "notice": "Demonstration records are clearly separated and can be reset at any time."
     })
 
+@demo_bp.route("/clean-mode", methods=["POST"])
+def enable_clean_mode():
+    """Initializes clean user mode by clearing seeded demo scans, ready for live citizen scans."""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM household_scans WHERE is_demo = 1")
+            conn.commit()
+        return jsonify({
+            "status": "success",
+            "message": "Clean operational mode initialized. Ready for genuine live scans."
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @demo_bp.route("/reset", methods=["POST"])
 def reset_demo():
     """Resets all demonstration data to baseline while preserving genuine user records."""
@@ -46,11 +62,11 @@ def reset_demo():
 
 @demo_bp.route("/walkthrough", methods=["GET"])
 def get_walkthrough():
-    """60-Second Hackathon Judge Walkthrough Guide."""
+    """Executive Platform Walkthrough Guide."""
     return jsonify({
         "status": "success",
-        "title": "EcoSync 60-Second Judge Walkthrough",
-        "problem_statement": "DSU Code Clash 2.0 — PS01: Smart Waste Management Digital Twin",
+        "title": "EcoSync 60-Second Executive Platform Tour",
+        "problem_statement": "Municipal Smart Waste Management & Circular Economy Platform",
         "steps": [
             {
                 "step": 1,

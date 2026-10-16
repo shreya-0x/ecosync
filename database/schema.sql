@@ -103,3 +103,28 @@ CREATE INDEX IF NOT EXISTS idx_batches_facility ON waste_batches(current_facilit
 CREATE INDEX IF NOT EXISTS idx_audit_batch ON batch_audit_log(batch_id);
 CREATE INDEX IF NOT EXISTS idx_household_category ON household_scans(category);
 CREATE INDEX IF NOT EXISTS idx_household_action ON household_scans(action_taken);
+
+-- Campus Smart Bins
+CREATE TABLE IF NOT EXISTS smart_bins (
+    code TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    location TEXT NOT NULL,
+    stream TEXT NOT NULL,
+    capacity_l INTEGER NOT NULL DEFAULT 120,
+    current_fill_pct INTEGER NOT NULL DEFAULT 45,
+    battery_pct INTEGER NOT NULL DEFAULT 90,
+    status TEXT NOT NULL DEFAULT 'Normal',
+    last_serviced DATETIME DEFAULT CURRENT_TIMESTAMP,
+    x_pct REAL NOT NULL DEFAULT 50.0,
+    y_pct REAL NOT NULL DEFAULT 50.0
+);
+
+-- Collection Dispatch Routes
+CREATE TABLE IF NOT EXISTS dispatch_routes (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    vehicle TEXT NOT NULL,
+    priority TEXT NOT NULL,
+    schedule TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Pending'
+);

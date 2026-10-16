@@ -34,6 +34,11 @@ def init_db():
 
         conn.executescript(schema_sql)
 
+        # Check if smart_bins table has data
+        cursor.execute("SELECT COUNT(*) FROM smart_bins")
+        if cursor.fetchone()[0] == 0:
+            seed_smart_bins_and_routes(conn)
+
         # Check if facilities already seeded
         cursor.execute("SELECT COUNT(*) FROM facilities")
         if cursor.fetchone()[0] == 0:
@@ -250,15 +255,43 @@ def seed_demo_household_data(conn):
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, {item[11]})
         """, item[:11])
 
+def seed_smart_bins_and_routes(conn):
+    """
+    Seeds campus smart bins and collection truck routes.
+    """
+    cursor = conn.cursor()
+    bins = [
+        ("BIN-05", "Sports Complex Exterior", "Athletics Field Entrance", "Bottles & Cans (Dry)", 120, 93, 76, "Critical Alert", "2026-10-16 05:07", 18.0, 32.0),
+        ("BIN-02", "Food Court Organic Station", "Cafeteria Wing B", "Wet Waste & Organics", 150, 89, 88, "Nearing Full", "2026-10-16 05:07", 72.0, 36.0),
+        ("BIN-01", "Campus Quad Node A", "Central Plaza", "Dry Waste & Recyclables", 120, 68, 94, "Normal", "2026-10-16 05:07", 26.0, 78.0),
+        ("BIN-06", "Administrative Hall Hub", "Admin Block Lobby", "General & Mixed Waste", 90, 55, 85, "Normal", "2026-10-16 05:07", 78.0, 82.0),
+        ("BIN-03", "Engineering Lab Drop-off", "Tech Block C, Floor 1", "Dry Waste / E-Waste", 80, 42, 98, "Normal", "2026-10-16 05:07", 45.0, 54.0),
+        ("BIN-04", "Library Quiet Zone", "Library South Wing", "Dry Paper & Books", 100, 24, 99, "Normal", "2026-10-16 05:07", 62.0, 68.0)
+    ]
+    cursor.executemany("""
+        INSERT OR REPLACE INTO smart_bins (code, name, location, stream, capacity_l, current_fill_pct, battery_pct, status, last_serviced, x_pct, y_pct)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, bins)
+
+    routes = [
+        ("TRK-R01", "Zone A Priority Express", "EV-Truck #04", "CRITICAL", "13:30 Today", "Dispatched"),
+        ("TRK-R02", "Cafeteria Organics Daily", "Bio-Collector #02", "HIGH", "14:15 Today", "In Transit"),
+        ("TRK-R03", "Academic Blocks Routine", "Standard EcoVan #01", "ROUTINE", "16:00 Today", "Pending")
+    ]
+    cursor.executemany("""
+        INSERT OR REPLACE INTO dispatch_routes (id, name, vehicle, priority, schedule, status)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, routes)
+
 def reset_demo_data():
     """
-    Resets all demo records in household_scans and simulation events,
-    leaving any real citizen scans (is_demo = 0) completely intact.
+    Resets all demo records in household_scans, smart_bins, and dispatch_routes.
     """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM household_scans WHERE is_demo = 1")
         seed_demo_household_data(conn)
+        seed_smart_bins_and_routes(conn)
         conn.commit()
     return {"status": "success", "message": "Demo data successfully reset to baseline."}
 

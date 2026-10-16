@@ -15,18 +15,23 @@ class EcoSyncApp {
     window.showEcoSyncToast = (message, type = "success") => this.showToast(message, type);
 
     // 2. Initialize Platform Services safely
-    if (typeof WasteScanner !== "undefined") window.wasteScanner = new WasteScanner();
-    if (typeof WasteGuide !== "undefined") window.wasteGuide = new WasteGuide();
-    if (typeof DigitalTwin !== "undefined") window.digitalTwin = new DigitalTwin();
-    if (typeof HouseholdImpact !== "undefined") window.householdImpact = new HouseholdImpact();
-    if (typeof AIAdvisor !== "undefined") window.aiAdvisor = new AIAdvisor();
+    if (typeof WasteScanner !== "undefined" && !window.wasteScanner) {
+      window.wasteScanner = new WasteScanner();
+    }
+    window.ecosyncScanner = window.wasteScanner;
+    if (typeof WasteGuide !== "undefined" && !window.wasteGuide) window.wasteGuide = new WasteGuide();
+    if (typeof DigitalTwin !== "undefined" && !window.digitalTwin) window.digitalTwin = new DigitalTwin();
+    if (typeof HouseholdImpact !== "undefined" && !window.householdImpact) window.householdImpact = new HouseholdImpact();
+    if (typeof AIAdvisor !== "undefined" && !window.aiAdvisor) window.aiAdvisor = new AIAdvisor();
 
-    // 3. Navigation routing
+    // 3. Navigation & Experience Setup
     this.isDemoMode = true;
+    this.initTheme();
     this.initNavigation();
     this.initHomeActions();
     this.initQuickBinFinder();
     this.initDemoModeControls();
+    this.initWelcomeModal();
 
     // 4. Fetch initial model status & health
     this.checkHealthAndModelStatus();
@@ -55,6 +60,7 @@ class EcoSyncApp {
         indicator.style.display = active ? "inline-block" : "none";
       }
     };
+    this.setDemoState = setDemoState;
 
     if (btnToggle) {
       btnToggle.addEventListener("click", () => {
@@ -75,7 +81,51 @@ class EcoSyncApp {
 
     // Walkthrough modal triggers
     const walkthroughModal = document.getElementById("walkthrough-modal");
+    let currentWalkthroughStep = 0;
+    const walkthroughSteps = [
+      {
+        title: "Step 1: Real AI Computer Vision Scanner",
+        body: "EcoSync runs genuine local YOLO object inference with normalized bounding boxes, exact confidence percentages, and explicit separation of visual detection from material classification.",
+        view: "scanner"
+      },
+      {
+        title: "Step 2: Digital Twin Command Centre",
+        body: "Interactive campus grid telemetry simulating waste stream flows, fill bottlenecks, and collection route efficiency under variable scenario loads.",
+        view: "twin"
+      },
+      {
+        title: "Step 3: Smart Bin Network & Dispatch",
+        body: "Real-time ultrasonic fill level and battery monitoring across campus bins with one-click dispatch and servicing workflows.",
+        view: "smart-bins"
+      },
+      {
+        title: "Step 4: Circular Sustainability Advisor & Impact",
+        body: "Complete 17-class zero-landfill taxonomy, verified disposal blueprints, GHG abatement metrics, and RFC-4180 verified CSV audit exports.",
+        view: "impact"
+      }
+    ];
+
+    const updateWalkthroughUI = () => {
+      const step = walkthroughSteps[currentWalkthroughStep];
+      const titleEl = document.getElementById("walkthrough-step-title");
+      const bodyEl = document.getElementById("walkthrough-step-body");
+      const progEl = document.getElementById("walkthrough-progress-label");
+      const btnPrev = document.getElementById("btn-walkthrough-prev");
+      const btnNext = document.getElementById("btn-walkthrough-next");
+
+      if (titleEl) titleEl.textContent = step.title;
+      if (bodyEl) bodyEl.textContent = step.body;
+      if (progEl) progEl.textContent = `STEP ${currentWalkthroughStep + 1} OF ${walkthroughSteps.length}`;
+      if (btnPrev) btnPrev.disabled = currentWalkthroughStep === 0;
+      if (btnNext) {
+        btnNext.textContent = currentWalkthroughStep === walkthroughSteps.length - 1 ? "Finish Tour ✓" : "Next Step →";
+      }
+      this.switchView(step.view);
+    };
+
     const openWalkthrough = () => {
+      currentWalkthroughStep = 0;
+      updateWalkthroughUI();
       if (walkthroughModal) walkthroughModal.style.display = "flex";
     };
 
@@ -89,6 +139,29 @@ class EcoSyncApp {
     if (btnCloseWalkthrough && walkthroughModal) {
       btnCloseWalkthrough.addEventListener("click", () => {
         walkthroughModal.style.display = "none";
+      });
+    }
+
+    const btnPrevWalk = document.getElementById("btn-walkthrough-prev");
+    if (btnPrevWalk) {
+      btnPrevWalk.addEventListener("click", () => {
+        if (currentWalkthroughStep > 0) {
+          currentWalkthroughStep--;
+          updateWalkthroughUI();
+        }
+      });
+    }
+
+    const btnNextWalk = document.getElementById("btn-walkthrough-next");
+    if (btnNextWalk) {
+      btnNextWalk.addEventListener("click", () => {
+        if (currentWalkthroughStep < walkthroughSteps.length - 1) {
+          currentWalkthroughStep++;
+          updateWalkthroughUI();
+        } else {
+          if (walkthroughModal) walkthroughModal.style.display = "none";
+          if (window.showEcoSyncToast) window.showEcoSyncToast("Platform tour complete! You can explore freely.");
+        }
       });
     }
 
@@ -112,6 +185,10 @@ class EcoSyncApp {
             if (window.householdImpact) {
               window.householdImpact.fetchImpactMetrics();
               window.householdImpact.fetchHistory();
+            }
+            if (window.digitalTwin) {
+              window.digitalTwin.fetchBins();
+              window.digitalTwin.fetchRoutes();
             }
             if (window.showEcoSyncToast) {
               window.showEcoSyncToast("Demo dataset successfully restored to pristine baseline!");
@@ -166,6 +243,17 @@ class EcoSyncApp {
     if (mobileBtn && mainNav) {
       mobileBtn.addEventListener("click", () => {
         mainNav.classList.toggle("mobile-active");
+      });
+    }
+
+    // Floating Back to Top Button
+    const btnScrollTop = document.getElementById("btn-scroll-top");
+    if (btnScrollTop) {
+      window.addEventListener("scroll", () => {
+        btnScrollTop.classList.toggle("visible", window.scrollY > 250);
+      });
+      btnScrollTop.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
       });
     }
   }
@@ -237,10 +325,10 @@ class EcoSyncApp {
     if (viewId === "home") {
       this.fetchHomeLiveStats();
     } else if (viewId === "twin" && window.digitalTwin) {
-      setTimeout(() => {
-        window.digitalTwin.resize();
-        window.digitalTwin.fetchTopology();
-      }, 100);
+      window.digitalTwin.fetchBins();
+      window.digitalTwin.fetchRoutes();
+    } else if (viewId === "smart-bins" && window.digitalTwin) {
+      window.digitalTwin.fetchBins();
     } else if (viewId === "guide" && window.wasteGuide) {
       window.wasteGuide.fetchItems();
     } else if (viewId === "impact" && window.householdImpact) {
@@ -249,6 +337,8 @@ class EcoSyncApp {
     } else if (viewId === "advisor" && window.aiAdvisor) {
       const input = document.getElementById("advisor-query-input");
       if (input) setTimeout(() => input.focus(), 150);
+    } else if (viewId === "about") {
+      this.checkHealthAndModelStatus();
     }
 
     // Smooth scroll to top of view
@@ -309,6 +399,174 @@ class EcoSyncApp {
       toast.style.transform = "translateY(12px)";
       setTimeout(() => toast.remove(), 250);
     }, 3800);
+  }
+
+  initTheme() {
+    const savedTheme = localStorage.getItem("ecosync_theme") || "dark";
+    if (savedTheme === "light") {
+      document.body.classList.add("light-theme");
+      this.updateThemeIcon(true);
+    }
+
+    const btnTheme = document.getElementById("btn-theme-toggle");
+    if (btnTheme) {
+      btnTheme.addEventListener("click", () => {
+        document.body.classList.toggle("light-theme");
+        const isLight = document.body.classList.contains("light-theme");
+        localStorage.setItem("ecosync_theme", isLight ? "light" : "dark");
+        this.updateThemeIcon(isLight);
+        if (window.showEcoSyncToast) {
+          window.showEcoSyncToast(isLight ? "Clean Light Theme Active" : "Obsidian Cyber Dark Active");
+        }
+      });
+    }
+  }
+
+  updateThemeIcon(isLight) {
+    const icon = document.getElementById("theme-toggle-icon");
+    if (!icon) return;
+    if (isLight) {
+      icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+    } else {
+      icon.innerHTML = `
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      `;
+    }
+  }
+
+  initWelcomeModal() {
+    const modal = document.getElementById("welcome-launch-modal");
+    if (!modal) return;
+
+    const slogans = [
+      "\"Smart Segregation Starts at the Source.\"",
+      "\"Turning Everyday Waste into Circular Value.\"",
+      "\"AI-Powered Vision & Real-Time Campus Digital Twin.\"",
+      "\"Zero Landfill. 100% Resource Recovery.\"",
+      "\"Precision Sorting for a Greener Tomorrow.\""
+    ];
+
+    const sloganEl = document.getElementById("welcome-slogan-text");
+    const fillEl = document.getElementById("welcome-calib-fill");
+    const statusEl = document.getElementById("welcome-calib-status");
+    const calibWrap = document.getElementById("welcome-calib-wrap");
+    const optionsGrid = document.getElementById("welcome-options-grid");
+    const btnSkip = document.getElementById("btn-skip-loading");
+
+    // Rotate 5 slogans smoothly across the 10 seconds (every 2.0 seconds)
+    let sloganIdx = 0;
+    const sloganTimer = setInterval(() => {
+      sloganIdx = (sloganIdx + 1) % slogans.length;
+      if (sloganEl) {
+        sloganEl.style.opacity = "0";
+        setTimeout(() => {
+          sloganEl.textContent = slogans[sloganIdx];
+          sloganEl.style.opacity = "1";
+        }, 220);
+      }
+    }, 2000);
+
+    // 10-second calibration timer (10,000 milliseconds)
+    const TOTAL_MS = 10000;
+    const STEP_MS = 100;
+    let elapsedMs = 0;
+
+    const finishCalibration = () => {
+      clearInterval(progressTimer);
+      clearInterval(sloganTimer);
+      if (fillEl) fillEl.style.width = "100%";
+      if (statusEl) statusEl.textContent = "CALIBRATION COMPLETE // READY FOR OPERATION (100%)";
+      setTimeout(() => {
+        if (calibWrap) {
+          calibWrap.style.transition = "opacity 0.3s ease";
+          calibWrap.style.opacity = "0";
+          setTimeout(() => {
+            calibWrap.style.display = "none";
+            if (optionsGrid) {
+              optionsGrid.style.display = "grid";
+              setTimeout(() => {
+                optionsGrid.style.opacity = "1";
+              }, 40);
+            }
+          }, 300);
+        }
+      }, 400);
+    };
+
+    const progressTimer = setInterval(() => {
+      elapsedMs += STEP_MS;
+      const pct = Math.min(100, Math.floor((elapsedMs / TOTAL_MS) * 100));
+      const secLeft = Math.max(0, Math.ceil((TOTAL_MS - elapsedMs) / 1000));
+
+      if (fillEl) fillEl.style.width = `${pct}%`;
+      if (statusEl) statusEl.textContent = `CALIBRATING CIRCULAR INTELLIGENCE... ${pct}% (${secLeft}s remaining)`;
+
+      if (elapsedMs >= TOTAL_MS) {
+        finishCalibration();
+      }
+    }, STEP_MS);
+
+    if (btnSkip) {
+      btnSkip.addEventListener("click", () => {
+        finishCalibration();
+      });
+    }
+
+    // Mode Option 1: Let's Explore (User mode - clean slate, requires user to add data)
+    const btnExplore = document.getElementById("btn-mode-explore");
+    if (btnExplore) {
+      btnExplore.addEventListener("click", async () => {
+        try {
+          await fetch("/api/demo/clean-mode", { method: "POST" });
+        } catch (e) {
+          console.warn("Could not set clean mode:", e);
+        }
+        this.setDemoState(false);
+        modal.style.transition = "opacity 0.4s ease";
+        modal.style.opacity = "0";
+        setTimeout(() => modal.style.display = "none", 400);
+        this.switchView("scanner");
+        if (window.showEcoSyncToast) {
+          window.showEcoSyncToast("Live User Operation active: Upload or snap items with your camera to add data.");
+        }
+        if (window.householdImpact) {
+          window.householdImpact.fetchImpactMetrics();
+          window.householdImpact.fetchHistory();
+        }
+      });
+    }
+
+    // Mode Option 2: View Demo (Built-in demonstration dataset)
+    const btnDemo = document.getElementById("btn-mode-demo");
+    if (btnDemo) {
+      btnDemo.addEventListener("click", async () => {
+        try {
+          await fetch("/api/demo/reset", { method: "POST" });
+        } catch (e) {
+          console.warn("Could not reset demo:", e);
+        }
+        this.setDemoState(true);
+        modal.style.transition = "opacity 0.4s ease";
+        modal.style.opacity = "0";
+        setTimeout(() => modal.style.display = "none", 400);
+        this.switchView("home");
+        if (window.showEcoSyncToast) {
+          window.showEcoSyncToast("Demo Ecosystem active with pre-built campus telemetry and sample streams.");
+        }
+        if (window.householdImpact) {
+          window.householdImpact.fetchImpactMetrics();
+          window.householdImpact.fetchHistory();
+        }
+      });
+    }
   }
 }
 

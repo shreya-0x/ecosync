@@ -107,6 +107,22 @@ WASTE_CATEGORIES = {
     }
 }
 
+# Non-waste entities taxonomy (excluded from waste catalog & metrics)
+NON_WASTE_CATEGORIES = {
+    "Uncategorized": {
+        "id": "uncategorized",
+        "name": "Uncategorized",
+        "short_desc": "Non-waste entities or unclassified items (such as human operators and living beings) that must not be discarded.",
+        "bin_color": "Purple / Non-Waste",
+        "bin_label": "Do Not Discard (Citizen / Handler)",
+        "badge_class": "badge-purple",
+        "icon": "👤",
+        "standard_weight_factor_kg": 0.0,
+        "diverted_co2_factor_per_kg": 0.0,
+        "energy_saved_kwh_per_kg": 0.0
+    }
+}
+
 # 2. Comprehensive 8-Point Guidance Directory for Specific Household Items
 ITEM_GUIDES = {
     # Plastics / Containers
@@ -509,12 +525,36 @@ ITEM_GUIDES = {
             "why_matters": "Steel is magnetic and easily separated by overhead electromagnets at MRFs. It can be recycled infinitely with zero degradation.",
             "citizen_action": "Use a manual can opener that leaves smooth edges, and tuck the lid safely inside the washed can before recycling."
         }
+    },
+    "person_non_waste": {
+        "id": "person_non_waste",
+        "display_name": "Person (Citizen / User)",
+        "category": "Uncategorized",
+        "material": "Living Being / Non-Waste",
+        "estimated_weight_kg": 0.0,
+        "guide": {
+            "what_is_it": "A human citizen, operator, or household member in front of the camera.",
+            "what_to_do_now": "Do not discard! Keep safe and ensure any waste items held are segregated properly.",
+            "which_bin": "Not Applicable (Human Being / Non-Waste)",
+            "how_to_prepare": "No preparation needed. Human presence detected.",
+            "what_to_avoid": "Do not attempt to record human presence as a waste item or disposal action.",
+            "where_should_it_go": "Not Applicable (Living Being)",
+            "why_matters": "Citizens are the primary champions of circular waste segregation at source.",
+            "citizen_action": "Practice source segregation at home and promote circular living."
+        }
     }
 }
 
 # 3. Model Class to Household Item Resolution Matrix
 # Maps standard YOLO detection classes to our verified household items
 MODEL_CLASS_MAP = {
+    "person": {
+        "item_id": "person_non_waste",
+        "object_identity": "Person (Citizen / User)",
+        "default_category": "Uncategorized",
+        "candidate_material": "Living Being / Non-Waste",
+        "confidence_weight": 0.95
+    },
     "bottle": {
         "item_id": "plastic_bottle",
         "object_identity": "Plastic Beverage Bottle",
@@ -708,8 +748,12 @@ MODEL_CLASS_MAP = {
 
 
 def get_category_info(category_name: str) -> Dict[str, Any]:
-    """Returns metadata for an official waste category."""
-    return WASTE_CATEGORIES.get(category_name, {
+    """Returns metadata for an official waste category or non-waste classification."""
+    if category_name in WASTE_CATEGORIES:
+        return WASTE_CATEGORIES[category_name]
+    if category_name in NON_WASTE_CATEGORIES:
+        return NON_WASTE_CATEGORIES[category_name]
+    return {
         "id": "unknown",
         "name": category_name,
         "short_desc": "General category.",
@@ -720,7 +764,7 @@ def get_category_info(category_name: str) -> Dict[str, Any]:
         "standard_weight_factor_kg": 0.1,
         "diverted_co2_factor_per_kg": 0.5,
         "energy_saved_kwh_per_kg": 1.0
-    })
+    }
 
 
 def get_item_guidance(item_id: str) -> Optional[Dict[str, Any]]:
@@ -816,6 +860,10 @@ def search_waste_guide(query: str = "", category: str = "", locality: str = "") 
     q = query.strip().lower()
 
     for item_key, item_data in ITEM_GUIDES.items():
+        # Exclude non-waste entities from the public waste catalog unless explicitly requested
+        if item_data.get("category") == "Uncategorized" and category != "Uncategorized":
+            continue
+
         # Filter by category if requested
         if category and item_data["category"] != category:
             continue

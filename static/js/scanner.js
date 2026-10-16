@@ -1,297 +1,356 @@
 /**
- * ECOSYNC — Smart Waste Scanner & Responsible Citizen Guidance Controller
- * Real YOLO computer-vision inference, aspect-ratio preserved bounding overlays,
- * 8-category taxonomy mapping, 8-point citizen guidance, and honest uncertainty handling.
+ * ECOSYNC — AI Vision Studio Scanner Controller
+ * Matches Reference Image 4.
+ * Real YOLOv8 inference, aligned SVG bounding boxes, 17-class mapping, and instant disposal confirmation.
  */
 
 class WasteScanner {
   constructor() {
     this.dropzone = document.getElementById("scanner-dropzone");
     this.fileInput = document.getElementById("scanner-file-input");
-    this.imgDisplay = document.getElementById("bbox-image-display");
-    this.overlayCanvas = document.getElementById("bbox-overlay-canvas");
-    this.ctx = this.overlayCanvas ? this.overlayCanvas.getContext("2d") : null;
-    this.stageContainer = document.getElementById("bbox-stage-container");
+    this.uploadArea = document.getElementById("scanner-upload-area");
+    this.cameraArea = document.getElementById("scanner-camera-area");
+    this.videoEl = document.getElementById("scanner-video-preview");
 
-    this.resultsPanel = document.getElementById("scanner-results-panel");
-    this.detectionsList = document.getElementById("detections-items-list");
-    this.countTitle = document.getElementById("detections-count-title");
-    this.categoryBadgesWrap = document.getElementById("category-summary-badges");
+    this.tabUpload = document.getElementById("tab-btn-upload");
+    this.tabCamera = document.getElementById("tab-btn-camera");
 
-    this.confSlider = document.getElementById("scanner-conf-slider");
-    this.confValueText = document.getElementById("scanner-conf-val-text");
-    this.toggleBoxes = document.getElementById("toggle-show-boxes");
-    this.toggleLabels = document.getElementById("toggle-show-labels");
+    this.btnCapture = document.getElementById("btn-camera-capture");
+    this.btnStopCam = document.getElementById("btn-camera-stop");
 
-    // Camera elements
-    this.btnToggleCamera = document.getElementById("btn-toggle-camera");
-    this.cameraContainer = document.getElementById("camera-viewfinder-container");
-    this.cameraVideo = document.getElementById("camera-video-stream");
-    this.btnCaptureCamera = document.getElementById("btn-capture-frame");
-    this.btnPauseCamera = document.getElementById("btn-pause-camera");
-    this.btnStopCamera = document.getElementById("btn-stop-camera");
-    this.cameraStream = null;
-    this.isCameraPaused = false;
+    this.sliderConf = document.getElementById("range-conf-threshold");
+    this.valConfText = document.getElementById("val-conf-threshold");
 
-    // Guidance and confirmation elements
-    this.guidanceCard = document.getElementById("scanner-guidance-card");
-    this.confirmForm = document.getElementById("scanner-confirmation-form");
-    this.selectCategory = document.getElementById("confirm-material-category");
-    this.selectAction = document.getElementById("confirm-disposal-action");
-    this.inputItemName = document.getElementById("confirm-item-name");
-    this.inputWeight = document.getElementById("confirm-weight-kg");
-    this.inputNotes = document.getElementById("confirm-notes");
-    this.btnSubmitBatch = document.getElementById("btn-submit-confirmed-batch");
-    this.btnAskAiAboutItem = document.getElementById("btn-ask-ai-item");
+    this.awaitingState = document.getElementById("scanner-awaiting-state");
+    this.activeOutput = document.getElementById("scanner-active-output");
+    this.renderedImg = document.getElementById("scan-rendered-img");
+    this.renderedSvg = document.getElementById("scan-rendered-svg");
+    this.detectionsList = document.getElementById("scanner-detections-list");
 
-    // State
     this.currentData = null;
-    this.selectedDetectionIndex = 0;
-    this.showBoundingBoxes = true;
-    this.showLabels = true;
-    this.confidenceThreshold = 0.25;
-
-    this.categoryColors = {
-      "Recyclable materials": "#2563eb",
-      "Organic and biodegradable waste": "#16a34a",
-      "Municipal solid waste": "#475569",
-      "Hazardous waste": "#dc2626",
-      "Electronic waste": "#d97706",
-      "Liquid waste": "#7c3aed",
-      "Construction and demolition waste": "#ca8a04",
-      "Biomedical and healthcare waste": "#e11d48",
-      "Plastic": "#2563eb",
-      "Metal": "#2563eb",
-      "Paper": "#2563eb",
-      "Cardboard": "#2563eb",
-      "Glass": "#2563eb"
-    };
+    this.cameraStream = null;
+    this.virtualCamTimer = null;
+    this.isStartingCamera = false;
+    this.confThreshold = 0.20;
 
     this.init();
   }
 
   init() {
-    this.initUploadEvents();
-    this.initQuickSamples();
-    this.initCameraEvents();
-    this.initControls();
-    this.initConfirmationEvents();
-    this.initManualCategoryButtons();
-
-    window.addEventListener("resize", () => {
-      if (this.currentData && this.imgDisplay) {
-        this.resizeOverlayCanvas();
-        this.renderBoundingBoxes();
-      }
-    });
+    this.initUpload();
+    this.initSlider();
   }
 
-  initUploadEvents() {
-    if (!this.dropzone || !this.fileInput) return;
-
-    this.dropzone.addEventListener("click", () => this.fileInput.click());
-
-    this.dropzone.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      this.dropzone.classList.add("drag-over");
-    });
-
-    this.dropzone.addEventListener("dragleave", () => {
-      this.dropzone.classList.remove("drag-over");
-    });
-
-    this.dropzone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      this.dropzone.classList.remove("drag-over");
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        this.handleFileUpload(e.dataTransfer.files[0]);
-      }
-    });
-
-    this.fileInput.addEventListener("change", (e) => {
-      if (e.target.files && e.target.files.length > 0) {
-        this.handleFileUpload(e.target.files[0]);
-      }
-    });
+  setSourceMode(mode) {
+    if (mode === "upload") {
+      if (this.tabUpload) this.tabUpload.classList.add("active");
+      if (this.tabCamera) this.tabCamera.classList.remove("active");
+      if (this.uploadArea) this.uploadArea.style.display = "block";
+      if (this.cameraArea) this.cameraArea.style.display = "none";
+      this.stopCamera();
+    } else {
+      if (this.tabUpload) this.tabUpload.classList.remove("active");
+      if (this.tabCamera) this.tabCamera.classList.add("active");
+      if (this.uploadArea) this.uploadArea.style.display = "none";
+      if (this.cameraArea) this.cameraArea.style.display = "block";
+      this.startCamera();
+    }
   }
 
-  initQuickSamples() {
-    document.querySelectorAll(".btn-sample-chip").forEach((chip) => {
-      chip.addEventListener("click", (e) => {
-        const sampleUrl = e.currentTarget.getAttribute("data-sample-url");
-        if (sampleUrl) {
-          this.inspectSampleImage(sampleUrl);
+  initUpload() {
+    if (this.dropzone && this.fileInput) {
+      this.dropzone.addEventListener("click", () => this.fileInput.click());
+
+      this.dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        this.dropzone.classList.add("dragover");
+      });
+
+      this.dropzone.addEventListener("dragleave", () => {
+        this.dropzone.classList.remove("dragover");
+      });
+
+      this.dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        this.dropzone.classList.remove("dragover");
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          this.uploadFile(e.dataTransfer.files[0]);
         }
       });
-    });
+
+      this.fileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          this.uploadFile(e.target.files[0]);
+        }
+      });
+    }
   }
 
-  initCameraEvents() {
-    if (this.btnToggleCamera) {
-      this.btnToggleCamera.addEventListener("click", () => this.startCamera());
-    }
-    if (this.btnStopCamera) {
-      this.btnStopCamera.addEventListener("click", () => this.stopCamera());
-    }
-    if (this.btnCaptureCamera) {
-      this.btnCaptureCamera.addEventListener("click", () => this.captureCameraFrame());
-    }
-    if (this.btnPauseCamera) {
-      this.btnPauseCamera.addEventListener("click", () => this.togglePauseCamera());
+  initSlider() {
+    if (this.sliderConf) {
+      this.sliderConf.addEventListener("input", (e) => {
+        this.confThreshold = parseFloat(e.target.value);
+        if (this.valConfText) {
+          this.valConfText.textContent = `${Math.round(this.confThreshold * 100)}%`;
+        }
+      });
     }
   }
 
   async startCamera() {
+    if (this.isStartingCamera) return;
+    this.isStartingCamera = true;
+
+    // Show camera area immediately
+    if (this.uploadArea) this.uploadArea.style.display = "none";
+    if (this.cameraArea) this.cameraArea.style.display = "block";
+    if (this.tabUpload) this.tabUpload.classList.remove("active");
+    if (this.tabCamera) this.tabCamera.classList.add("active");
+
+    const statusOverlay = document.getElementById("scanner-cam-status-overlay");
+    const statusText = document.getElementById("scanner-cam-status-text");
+    const statusActions = document.getElementById("scanner-cam-status-actions");
+
+    if (statusOverlay) {
+      statusOverlay.style.display = "flex";
+      if (statusText) statusText.innerHTML = `
+        <div class="welcome-spinner-ring" style="width:32px; height:32px; margin:0 auto 12px;"></div>
+        <div style="font-family:var(--font-mono); font-size:13px; color:var(--brand-neon);">
+          CONNECTING TO WEBCAM HARDWARE...
+        </div>
+        <div style="font-size:12px; color:var(--text-secondary); margin-top:6px;">
+          Please select "Allow" if prompted for camera permission.
+        </div>
+      `;
+      if (statusActions) statusActions.style.display = "none";
+    }
+
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        if (window.showEcoSyncToast) window.showEcoSyncToast("Camera access is not supported on this browser.", "warning");
-        return;
+        throw new Error("WebRTC camera API is not supported in this browser context.");
       }
-      this.cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "environment" }
-      });
-      if (this.cameraVideo) {
-        this.cameraVideo.srcObject = this.cameraStream;
-        await this.cameraVideo.play();
+
+      // Stop any existing stream first
+      if (this.cameraStream) {
+        try {
+          this.cameraStream.getTracks().forEach(t => t.stop());
+        } catch (e) {}
+        this.cameraStream = null;
       }
-      if (this.cameraContainer) {
-        this.cameraContainer.classList.add("active");
-        this.cameraContainer.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (this.virtualCamTimer) {
+        clearInterval(this.virtualCamTimer);
+        this.virtualCamTimer = null;
       }
-      this.isCameraPaused = false;
-      if (this.btnPauseCamera) this.btnPauseCamera.textContent = "Pause Feed";
-      if (window.showEcoSyncToast) window.showEcoSyncToast("Camera stream started. Hold waste item in front of lens.");
-    } catch (err) {
-      console.error("Camera access error:", err);
+
+      // Attempt standard universal video constraint first
+      let stream = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+      } catch (err1) {
+        console.warn("Direct video:true request failed, attempting resolution constraints:", err1);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      }
+
+      this.cameraStream = stream;
+
+      if (this.videoEl) {
+        this.videoEl.srcObject = this.cameraStream;
+        this.videoEl.muted = true;
+        this.videoEl.playsInline = true;
+        this.videoEl.setAttribute("playsinline", "true");
+        this.videoEl.setAttribute("muted", "true");
+
+        // Wait for metadata ready before play
+        await new Promise((resolve) => {
+          const timeout = setTimeout(() => resolve(), 2000);
+          this.videoEl.onloadedmetadata = () => {
+            clearTimeout(timeout);
+            this.videoEl.play().then(resolve).catch(resolve);
+          };
+        });
+
+        try {
+          await this.videoEl.play();
+        } catch (playErr) {
+          console.warn("Autoplay notice:", playErr);
+        }
+      }
+
+      if (statusOverlay) {
+        statusOverlay.style.display = "none";
+      }
+
       if (window.showEcoSyncToast) {
-        window.showEcoSyncToast("Could not open camera: " + (err.message || "Permission denied"), "warning");
+        window.showEcoSyncToast("Live webcam connected! Point at an item and click 'Snap & Detect'.");
       }
+
+    } catch (err) {
+      console.error("Camera access failed:", err);
+      if (statusOverlay) {
+        statusOverlay.style.display = "flex";
+        let reason = "Could Not Connect to Webcam";
+        let advice = "Please verify browser permissions and try again.";
+
+        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+          reason = "Camera Permission Blocked";
+          advice = "Click the camera or lock icon in your browser URL bar, set Camera to 'Allow', then click Retry.";
+        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+          reason = "No Webcam Hardware Detected";
+          advice = "No physical webcam was found on this device. You can test the scanner workflow with a Virtual Stream or upload a file.";
+        } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+          reason = "Webcam in Use by Another Application";
+          advice = "Another app (Zoom, Teams, or another tab) is currently using the camera. Close it and click Retry.";
+        }
+
+        if (statusText) {
+          statusText.innerHTML = `
+            <div style="font-size:26px; margin-bottom:8px;">📷⚠️</div>
+            <div style="font-family:var(--font-mono); font-size:14px; font-weight:700; color:#f87171; margin-bottom:6px;">
+              ${reason}
+            </div>
+            <div style="font-size:12.5px; color:var(--text-secondary); max-width:380px; line-height:1.5;">
+              ${advice}
+            </div>
+          `;
+        }
+        if (statusActions) {
+          statusActions.style.display = "flex";
+        }
+      }
+    } finally {
+      this.isStartingCamera = false;
     }
   }
 
-  togglePauseCamera() {
-    if (!this.cameraVideo || !this.cameraStream) return;
-    if (this.isCameraPaused) {
-      this.cameraVideo.play();
-      this.isCameraPaused = false;
-      if (this.btnPauseCamera) this.btnPauseCamera.textContent = "Pause Feed";
-    } else {
-      this.cameraVideo.pause();
-      this.isCameraPaused = true;
-      if (this.btnPauseCamera) this.btnPauseCamera.textContent = "Resume Feed";
+  startVirtualCamera() {
+    const statusOverlay = document.getElementById("scanner-cam-status-overlay");
+    if (statusOverlay) statusOverlay.style.display = "none";
+
+    // Create a live simulated camera canvas stream
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 480;
+    const ctx = canvas.getContext("2d");
+
+    const sampleImages = [
+      "/static/images/samples/sample_redbull.jpg",
+      "/static/images/samples/sample_bottle.jpg",
+      "/static/images/samples/sample_apple.jpg"
+    ];
+    let sampleIdx = 0;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = sampleImages[sampleIdx];
+
+    if (this.virtualCamTimer) clearInterval(this.virtualCamTimer);
+    let frameCount = 0;
+
+    this.virtualCamTimer = setInterval(() => {
+      frameCount++;
+      // Switch image every ~120 frames
+      if (frameCount % 120 === 0) {
+        sampleIdx = (sampleIdx + 1) % sampleImages.length;
+        img.src = sampleImages[sampleIdx];
+      }
+
+      ctx.fillStyle = "#060f09";
+      ctx.fillRect(0, 0, 640, 480);
+
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, 20, 20, 600, 440);
+      }
+
+      // Live HUD watermark
+      ctx.fillStyle = "rgba(4, 8, 6, 0.75)";
+      ctx.fillRect(14, 14, 250, 28);
+      ctx.fillStyle = "#00e599";
+      ctx.font = "11px 'Space Mono', monospace";
+      ctx.fillText(`● VIRTUAL CAM // ${new Date().toLocaleTimeString()}`, 24, 32);
+    }, 40);
+
+    const stream = canvas.captureStream(30);
+    this.cameraStream = stream;
+
+    if (this.videoEl) {
+      this.videoEl.srcObject = stream;
+      this.videoEl.muted = true;
+      this.videoEl.playsInline = true;
+      this.videoEl.play().catch(e => console.warn(e));
+    }
+
+    if (window.showEcoSyncToast) {
+      window.showEcoSyncToast("Virtual camera stream active! Click 'Snap & Detect Frame' to test.");
     }
   }
 
   stopCamera() {
     if (this.cameraStream) {
-      this.cameraStream.getTracks().forEach((track) => track.stop());
+      this.cameraStream.getTracks().forEach(track => {
+        try { track.stop(); } catch(e) {}
+      });
       this.cameraStream = null;
     }
-    if (this.cameraContainer) {
-      this.cameraContainer.classList.remove("active");
+    if (this.virtualCamTimer) {
+      clearInterval(this.virtualCamTimer);
+      this.virtualCamTimer = null;
     }
-    this.isCameraPaused = false;
+    if (this.videoEl) {
+      this.videoEl.pause();
+      this.videoEl.srcObject = null;
+    }
+    const statusOverlay = document.getElementById("scanner-cam-status-overlay");
+    if (statusOverlay) statusOverlay.style.display = "none";
+
+    if (this.cameraArea) this.cameraArea.style.display = "none";
+    if (this.uploadArea) this.uploadArea.style.display = "block";
+    if (this.tabUpload) this.tabUpload.classList.add("active");
+    if (this.tabCamera) this.tabCamera.classList.remove("active");
+    if (window.showEcoSyncToast) {
+      window.showEcoSyncToast("Camera stopped. Switched back to File Upload.");
+    }
   }
 
-  captureCameraFrame() {
-    if (!this.cameraVideo) return;
+  captureFrame() {
+    if (!this.videoEl || !this.cameraStream) {
+      if (window.showEcoSyncToast) window.showEcoSyncToast("Camera stream is not active. Starting camera...", "warning");
+      this.startCamera();
+      return;
+    }
+
+    const flash = document.getElementById("scanner-cam-flash");
+    if (flash) {
+      flash.style.opacity = "0.85";
+      setTimeout(() => { flash.style.opacity = "0"; }, 120);
+    }
+
+    const vw = this.videoEl.videoWidth || this.videoEl.clientWidth || 640;
+    const vh = this.videoEl.videoHeight || this.videoEl.clientHeight || 480;
+
     const canvas = document.createElement("canvas");
-    canvas.width = this.cameraVideo.videoWidth || 640;
-    canvas.height = this.cameraVideo.videoHeight || 480;
+    canvas.width = vw;
+    canvas.height = vh;
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(this.cameraVideo, 0, 0);
+    ctx.drawImage(this.videoEl, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], `camera_frame_${Date.now()}.jpg`, { type: "image/jpeg" });
-        this.stopCamera();
-        this.handleFileUpload(file);
-      }
-    }, "image/jpeg", 0.92);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.90);
+    if (window.showEcoSyncToast) {
+      window.showEcoSyncToast("📸 Frame captured! Analyzing waste item...");
+    }
+    this.sendImagePayload({ image_base64: dataUrl });
   }
 
-  initControls() {
-    if (this.confSlider) {
-      this.confSlider.addEventListener("input", (e) => {
-        this.confidenceThreshold = parseFloat(e.target.value);
-        if (this.confValueText) {
-          this.confValueText.textContent = `${Math.round(this.confidenceThreshold * 100)}%`;
-        }
-      });
-      this.confSlider.addEventListener("change", () => {
-        if (this.currentData && this.currentData.image) {
-          this.reFilterOrReload();
-        }
-      });
-    }
-
-    if (this.toggleBoxes) {
-      this.toggleBoxes.addEventListener("change", (e) => {
-        this.showBoundingBoxes = e.target.checked;
-        this.renderBoundingBoxes();
-      });
-    }
-
-    if (this.toggleLabels) {
-      this.toggleLabels.addEventListener("change", (e) => {
-        this.showLabels = e.target.checked;
-        this.renderBoundingBoxes();
-      });
-    }
-
-    if (this.overlayCanvas) {
-      this.overlayCanvas.addEventListener("click", (e) => this.onCanvasClick(e));
-    }
-  }
-
-  initConfirmationEvents() {
-    if (this.btnSubmitBatch) {
-      this.btnSubmitBatch.addEventListener("click", async (e) => {
-        e.preventDefault();
-        await this.submitConfirmedBatch();
-      });
-    }
-
-    if (this.btnAskAiAboutItem) {
-      this.btnAskAiAboutItem.addEventListener("click", () => {
-        const itemTitle = this.inputItemName ? this.inputItemName.value : "this waste item";
-        if (window.aiAdvisor) {
-          window.aiAdvisor.openWithPrompt(`How should my household handle, dispose of, or recycle ${itemTitle}?`);
-        }
-      });
-    }
-  }
-
-  initManualCategoryButtons() {
-    document.querySelectorAll(".btn-manual-cat").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        const cat = e.currentTarget.getAttribute("data-cat");
-        if (cat && this.selectCategory) {
-          this.selectCategory.value = cat;
-          this.renderManualCategoryGuidance(cat);
-        }
-      });
-    });
-  }
-
-  async handleFileUpload(file) {
-    if (!file) return;
-
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowed.includes(file.type)) {
-      if (window.showEcoSyncToast) window.showEcoSyncToast("Please upload a JPEG, PNG, or WEBP image.", "warning");
-      return;
-    }
-    if (file.size > 16 * 1024 * 1024) {
-      if (window.showEcoSyncToast) window.showEcoSyncToast("File exceeds maximum allowed size of 16 MB.", "warning");
-      return;
-    }
-
+  async uploadFile(file) {
     const formData = new FormData();
     formData.append("image", file);
-    formData.append("confidence_threshold", this.confidenceThreshold);
+    formData.append("confidence_threshold", this.confThreshold);
 
-    this.setLoadingState(true);
+    this.showScanningState();
 
     try {
       const resp = await fetch("/api/detect", {
@@ -299,393 +358,244 @@ class WasteScanner {
         body: formData
       });
       const data = await resp.json();
-      this.setLoadingState(false);
-
       if (data.status === "success") {
         this.displayResults(data.data);
       } else {
-        if (window.showEcoSyncToast) {
-          window.showEcoSyncToast("Detection error: " + (data.message || "Failed to process image"), "warning");
-        }
+        alert(data.message || "Detection error.");
       }
     } catch (err) {
-      this.setLoadingState(false);
-      console.error("Network error during detection:", err);
-      if (window.showEcoSyncToast) {
-        window.showEcoSyncToast("Could not reach computer vision service.", "warning");
-      }
+      console.error("Upload error:", err);
     }
   }
 
-  async inspectSampleImage(samplePath) {
-    this.setLoadingState(true);
+  async loadSample(samplePath) {
+    this.showScanningState();
     try {
       const resp = await fetch("/api/detect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sample_path: samplePath,
-          confidence_threshold: this.confidenceThreshold
+          confidence_threshold: this.confThreshold
         })
       });
       const data = await resp.json();
-      this.setLoadingState(false);
-
       if (data.status === "success") {
         this.displayResults(data.data);
-      } else {
-        if (window.showEcoSyncToast) {
-          window.showEcoSyncToast("Sample inspection error: " + (data.message || "Failed to process sample"), "warning");
-        }
       }
     } catch (err) {
-      this.setLoadingState(false);
-      console.error("Error inspecting sample:", err);
-      if (window.showEcoSyncToast) {
-        window.showEcoSyncToast("Failed to inspect sample image.", "warning");
-      }
+      console.error("Sample detect error:", err);
     }
   }
 
-  setLoadingState(isLoading) {
-    const dropTitle = document.querySelector(".dropzone-title");
-    if (dropTitle) {
-      dropTitle.textContent = isLoading ? "RUNNING YOLO11n INFERENCE..." : "UPLOAD OR DRAG WASTE PHOTO";
-    }
-    if (this.dropzone) {
-      this.dropzone.style.opacity = isLoading ? "0.6" : "1";
-    }
-  }
-
-  displayResults(resultData) {
-    this.currentData = resultData;
-    this.selectedDetectionIndex = 0;
-
-    if (this.stageContainer) {
-      this.stageContainer.style.display = "block";
-    }
-
-    if (this.imgDisplay) {
-      this.imgDisplay.src = resultData.image.url;
-      this.imgDisplay.onload = () => {
-        this.resizeOverlayCanvas();
-        this.renderBoundingBoxes();
-      };
-      if (this.imgDisplay.complete && this.imgDisplay.naturalWidth > 0) {
-        this.resizeOverlayCanvas();
-        this.renderBoundingBoxes();
-      }
-    }
-
-    // Title and uncertainty note
-    if (this.countTitle) {
-      if (resultData.count === 0) {
-        this.countTitle.textContent = "UNFAMILIAR ITEM / LOW CONFIDENCE";
-      } else {
-        this.countTitle.textContent = `${resultData.count} OBJECT${resultData.count === 1 ? "" : "S"} IDENTIFIED`;
-      }
-    }
-
-    // Category badges
-    if (this.categoryBadgesWrap) {
-      this.categoryBadgesWrap.innerHTML = "";
-      Object.entries(resultData.category_summary || {}).forEach(([cat, count]) => {
-        const badge = document.createElement("span");
-        badge.className = "badge-tag";
-        badge.style.cssText = "font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #e2e8f0; color: #334155;";
-        badge.textContent = `${count} ${cat}`;
-        this.categoryBadgesWrap.appendChild(badge);
-      });
-    }
-
-    // Render detections list
-    this.renderDetectionsList();
-
-    // Show guidance for first detection or manual fallback
-    if (resultData.detections && resultData.detections.length > 0) {
-      this.updateGuidanceDisplay(resultData.detections[0]);
-    } else {
-      this.showUncertaintyFallback(resultData.uncertainty_note);
-    }
-  }
-
-  renderDetectionsList() {
-    if (!this.detectionsList || !this.currentData) return;
-    this.detectionsList.innerHTML = "";
-
-    const detections = this.currentData.detections || [];
-    if (detections.length === 0) {
-      this.detectionsList.innerHTML = `
-        <div style="padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; font-size: 13px; color: #92400e;">
-          <p><strong>Honest AI Notice:</strong> No standard household items were detected above ${Math.round(this.confidenceThreshold * 100)}% confidence.</p>
-          <p style="font-size: 12px; margin-top: 4px;">EcoSync avoids guessing or fabricating classifications. Please choose the correct waste category below.</p>
-        </div>
-      `;
-      return;
-    }
-
-    detections.forEach((det, idx) => {
-      const item = document.createElement("div");
-      item.className = `detection-row-item ${this.selectedDetectionIndex === idx ? "selected" : ""}`;
-      item.innerHTML = `
-        <div class="detection-row-left">
-          <span class="detection-idx">#${det.index}</span>
-          <div>
-            <div class="detection-name">${det.object_identity || det.candidate_material}</div>
-            <div class="detection-sub">Model detected: <code>${det.raw_class}</code> • Suggested: <strong>${det.suggested_category}</strong></div>
-          </div>
-        </div>
-        <div class="detection-conf-badge">${det.confidence_pct}% CONF</div>
-      `;
-
-      item.addEventListener("click", () => {
-        this.selectedDetectionIndex = idx;
-        this.renderDetectionsList();
-        this.renderBoundingBoxes();
-        this.updateGuidanceDisplay(det);
-      });
-
-      this.detectionsList.appendChild(item);
-    });
-  }
-
-  updateGuidanceDisplay(det) {
-    if (!det) return;
-
-    const g = det.how_to_handle || {};
-    const catInfo = det.category_info || {};
-
-    // Update primary bin callout banner
-    const banner = document.getElementById("scanner-target-bin-banner");
-    const binIcon = document.getElementById("scanner-bin-icon");
-    const binTitle = document.getElementById("scanner-bin-title");
-    const binSub = document.getElementById("scanner-bin-sub");
-
-    if (banner && binTitle) {
-      const cat = det.suggested_category || "Recyclable materials";
-      let bannerClass = "blue";
-      let icon = "🔵";
-      let title = "BLUE BIN — RECYCLABLES";
-      let subtitle = "Clean dry paper, cardboard, plastic bottles & cans";
-
-      if (cat.includes("Organic")) {
-        bannerClass = "green";
-        icon = "🟢";
-        title = "GREEN BIN — WET COMPOST & ORGANICS";
-        subtitle = "Kitchen food scraps, fruit rinds, vegetable peels, coffee grounds";
-      } else if (cat.includes("Electronic")) {
-        bannerClass = "amber";
-        icon = "🟠";
-        title = "ORANGE KIOSK — CERTIFIED E-WASTE ONLY";
-        subtitle = "Mobile phones, chargers, circuit boards, small home appliances";
-      } else if (cat.includes("Hazardous")) {
-        bannerClass = "red";
-        icon = "🔴";
-        title = "HAZARDOUS DEPOT — DO NOT CURBSIDE BIN";
-        subtitle = "Batteries, CFL bulbs, paint residues, toxic chemicals";
-      } else if (cat.includes("Liquid")) {
-        bannerClass = "red";
-        icon = "🛢️";
-        title = "SEALED BOTTLE DEPOT — NEVER DOWN DRAINS";
-        subtitle = "Cooled used cooking oils and motor lubricants";
-      } else if (cat.includes("Municipal solid")) {
-        bannerClass = "charcoal";
-        icon = "🗑️";
-        title = "GRAY/BLACK BIN — GENERAL TRASH";
-        subtitle = "Non-recyclable mixed wrappers, multi-material plastics";
-      }
-
-      banner.className = `target-bin-banner ${bannerClass}`;
-      if (binIcon) binIcon.textContent = icon;
-      binTitle.textContent = title;
-      if (binSub) binSub.textContent = subtitle;
-    }
-
-    // Update 8-point guidance UI
-    const elWhat = document.getElementById("guide-p-what");
-    const elNow = document.getElementById("guide-p-now");
-    const elBin = document.getElementById("guide-p-bin");
-    const elPrep = document.getElementById("guide-p-prep");
-    const elAvoid = document.getElementById("guide-p-avoid");
-    const elWhere = document.getElementById("guide-p-where");
-    const elWhy = document.getElementById("guide-p-why");
-    const elAction = document.getElementById("guide-p-action");
-    const safetyBox = document.getElementById("scanner-safety-alert");
-
-    if (elWhat) elWhat.textContent = g.what_is_it || det.object_identity;
-    if (elNow) elNow.textContent = g.what_to_do_now || "Inspect cleanliness and prepare for proper waste stream.";
-    if (elBin) elBin.textContent = g.which_bin || `${catInfo.bin_color || 'Standard'} (${catInfo.bin_label || ''})`;
-    if (elPrep) elPrep.textContent = g.how_to_prepare || "Empty and clean off residual food or liquids.";
-    if (elAvoid) elAvoid.textContent = g.what_to_avoid || "Avoid mixing with incompatible waste streams.";
-    if (elWhere) elWhere.textContent = g.where_should_it_go || "Follow municipal collection schedule or local drop-off center.";
-    if (elWhy) elWhy.textContent = g.why_matters || "Proper sorting keeps valuable materials in circulation and reduces landfill methane.";
-    if (elAction) elAction.textContent = g.citizen_action || "Carry reusables whenever possible to reduce disposable items.";
-
-    // Safety Alert
-    if (safetyBox) {
-      if (det.safety_warning) {
-        safetyBox.textContent = `⚠️ Safety Notice: ${det.safety_warning}`;
-        safetyBox.style.display = "block";
-      } else {
-        safetyBox.style.display = "none";
-      }
-    }
-
-    // Pre-populate confirmation form
-    if (this.selectCategory) this.selectCategory.value = det.suggested_category || "Recyclable materials";
-    if (this.inputItemName) this.inputItemName.value = det.object_identity || det.raw_class;
-    if (this.inputWeight) this.inputWeight.value = det.estimated_weight_kg || 0.05;
-
-    // Show guidance card
-    if (this.guidanceCard) this.guidanceCard.style.display = "block";
-  }
-
-  showUncertaintyFallback(note) {
-    if (this.guidanceCard) this.guidanceCard.style.display = "block";
-    const elWhat = document.getElementById("guide-p-what");
-    if (elWhat) elWhat.textContent = note || "Uncertain item. Please pick a category manually.";
-  }
-
-  renderManualCategoryGuidance(catName) {
-    if (this.selectCategory) this.selectCategory.value = catName;
-    if (this.inputItemName) this.inputItemName.value = `Household Item (${catName})`;
-    if (this.guidanceCard) this.guidanceCard.style.display = "block";
-  }
-
-  resizeOverlayCanvas() {
-    if (!this.imgDisplay || !this.overlayCanvas) return;
-    const rect = this.imgDisplay.getBoundingClientRect();
-    this.overlayCanvas.width = rect.width;
-    this.overlayCanvas.height = rect.height;
-  }
-
-  renderBoundingBoxes() {
-    if (!this.ctx || !this.overlayCanvas || !this.currentData || !this.imgDisplay) return;
-
-    const w = this.overlayCanvas.width;
-    const h = this.overlayCanvas.height;
-    this.ctx.clearRect(0, 0, w, h);
-
-    if (!this.showBoundingBoxes) return;
-
-    const detections = this.currentData.detections || [];
-    detections.forEach((det, idx) => {
-      const norm = det.bounding_box.normalized;
-      const bx = norm.x1 * w;
-      const by = norm.y1 * h;
-      const bw = norm.width * w;
-      const bh = norm.height * h;
-
-      const isSelected = this.selectedDetectionIndex === idx;
-      const strokeColor = isSelected ? "#10b981" : "#3b82f6";
-
-      // Draw box
-      this.ctx.save();
-      this.ctx.strokeStyle = strokeColor;
-      this.ctx.lineWidth = isSelected ? 3 : 2;
-      this.ctx.strokeRect(bx, by, bw, bh);
-
-      // Subtle fill for selected box
-      if (isSelected) {
-        this.ctx.fillStyle = "rgba(16, 185, 129, 0.15)";
-        this.ctx.fillRect(bx, by, bw, bh);
-      }
-
-      // Draw label
-      if (this.showLabels) {
-        const labelText = `#${det.index} ${det.object_identity} (${det.confidence_pct}%)`;
-        this.ctx.font = "bold 11px system-ui, sans-serif";
-        const textMetrics = this.ctx.measureText(labelText);
-        const bgW = textMetrics.width + 10;
-        const bgH = 18;
-
-        this.ctx.fillStyle = strokeColor;
-        this.ctx.fillRect(bx, Math.max(0, by - bgH), bgW, bgH);
-
-        this.ctx.fillStyle = "#ffffff";
-        this.ctx.fillText(labelText, bx + 5, Math.max(12, by - 4));
-      }
-
-      this.ctx.restore();
-    });
-  }
-
-  onCanvasClick(e) {
-    if (!this.currentData || !this.overlayCanvas) return;
-    const rect = this.overlayCanvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-    const w = this.overlayCanvas.width;
-    const h = this.overlayCanvas.height;
-
-    let foundIdx = null;
-    (this.currentData.detections || []).forEach((det, idx) => {
-      const norm = det.bounding_box.normalized;
-      const bx = norm.x1 * w;
-      const by = norm.y1 * h;
-      const bw = norm.width * w;
-      const bh = norm.height * h;
-
-      if (clickX >= bx && clickX <= bx + bw && clickY >= by && clickY <= by + bh) {
-        foundIdx = idx;
-      }
-    });
-
-    if (foundIdx !== null) {
-      this.selectedDetectionIndex = foundIdx;
-      this.renderDetectionsList();
-      this.renderBoundingBoxes();
-      this.updateGuidanceDisplay(this.currentData.detections[foundIdx]);
-    }
-  }
-
-  async submitConfirmedBatch() {
-    const itemName = this.inputItemName ? this.inputItemName.value.trim() : "Household Item";
-    const category = this.selectCategory ? this.selectCategory.value : "Recyclable materials";
-    const action = this.selectAction ? this.selectAction.value : "Confirmed & Segregated";
-    const weight = parseFloat(this.inputWeight ? this.inputWeight.value : 0.05);
-    const notes = this.inputNotes ? this.inputNotes.value.trim() : "";
-
-    const payload = {
-      detection_batch_id: this.currentData ? this.currentData.detection_batch_id : null,
-      confirmed_category: category,
-      item_name: itemName,
-      action_taken: action,
-      estimated_weight_kg: weight,
-      sub_type: itemName,
-      notes: notes || `Household action: ${action}`
-    };
+  async sendImagePayload(payload) {
+    this.showScanningState();
+    payload.confidence_threshold = this.confThreshold;
 
     try {
-      const resp = await fetch("/api/classifications/confirm", {
+      const resp = await fetch("/api/detect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
-
       if (data.status === "success") {
+        this.displayResults(data.data);
+      }
+    } catch (err) {
+      console.error("Inference payload error:", err);
+    }
+  }
+
+  showScanningState() {
+    if (this.awaitingState) this.awaitingState.style.display = "none";
+    if (this.activeOutput) {
+      this.activeOutput.style.display = "block";
+      this.detectionsList.innerHTML = `
+        <div style="text-align:center; padding:30px; font-family:var(--font-mono); color:var(--brand-neon);">
+          ⚡ RUNNING YOLOV8 NEURAL INFERENCE...
+        </div>
+      `;
+    }
+  }
+
+  displayResults(data) {
+    this.currentData = data;
+    if (this.awaitingState) this.awaitingState.style.display = "none";
+    if (this.activeOutput) this.activeOutput.style.display = "block";
+
+    const imgUrl = (data.image && data.image.url) ? data.image.url : (data.image_filename ? `/uploads/${data.image_filename}` : "");
+    if (this.renderedImg) {
+      this.renderedImg.src = imgUrl;
+      this.renderedImg.onload = () => {
+        this.renderSvgBoundingBoxes(data);
+      };
+    }
+
+    this.renderDetectionsList(data);
+  }
+
+  renderSvgBoundingBoxes(data) {
+    if (!this.renderedSvg || !data.detections || data.detections.length === 0) {
+      if (this.renderedSvg) this.renderedSvg.innerHTML = "";
+      return;
+    }
+
+    const imgW = (data.image && data.image.width) ? data.image.width : (data.image_dimensions ? data.image_dimensions.width : 800);
+    const imgH = (data.image && data.image.height) ? data.image.height : (data.image_dimensions ? data.image_dimensions.height : 600);
+
+    this.renderedSvg.setAttribute("viewBox", `0 0 ${imgW} ${imgH}`);
+    let svgContent = "";
+
+    data.detections.forEach((det) => {
+      const b = det.bounding_box.pixel;
+      const x = b.x1;
+      const y = b.y1;
+      const w = b.width;
+      const h = b.height;
+      const isWaste = det.is_waste !== false && det.suggested_category !== "Uncategorized";
+      const color = isWaste ? (det.bin_color || "#00e599") : "#a855f7";
+
+      const label = isWaste ? `${det.object_identity} (${det.confidence_pct}%)` : `👤 ${det.object_identity} (Uncategorized)`;
+      const labelW = Math.min(w, label.length * 9 + 20);
+
+      svgContent += `
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${isWaste ? 'rgba(0, 229, 153, 0.08)' : 'rgba(168, 85, 247, 0.08)'}" stroke="${color}" stroke-width="3" rx="6" style="filter:drop-shadow(0 0 8px ${color});"/>
+        <rect x="${x}" y="${Math.max(0, y - 26)}" width="${labelW}" height="24" fill="${color}" rx="4"/>
+        <text x="${x + 6}" y="${Math.max(0, y - 26) + 16}" fill="#060c09" font-family="'Space Mono', monospace" font-size="12" font-weight="700">
+          ${label}
+        </text>
+      `;
+    });
+
+    this.renderedSvg.innerHTML = svgContent;
+  }
+
+  renderDetectionsList(data) {
+    if (!this.detectionsList) return;
+    this.detectionsList.innerHTML = "";
+
+    const dets = data.detections || [];
+    if (dets.length === 0) {
+      this.detectionsList.innerHTML = `
+        <div class="detection-identity-card" style="text-align:center;">
+          <h4 style="color:var(--text-muted);">No distinct waste items detected at current threshold.</h4>
+          <p style="font-size:13px; color:var(--text-secondary); margin-top:8px;">Try lowering sensitivity slider or uploading a clearer, well-lit photo.</p>
+        </div>
+      `;
+      return;
+    }
+
+    dets.forEach((det, idx) => {
+      const card = document.createElement("div");
+      card.className = "detection-identity-card";
+      const isWaste = det.is_waste !== false && det.suggested_category !== "Uncategorized";
+      const prep = (det.how_to_handle && det.how_to_handle.how_to_prepare) ? det.how_to_handle.how_to_prepare : (det.how_to_handle ? det.how_to_handle.what_to_do_now : "");
+
+      const badgeStyle = !isWaste ? 'background:rgba(168,85,247,0.18); border:1px solid #a855f7; color:#c084fc;' : '';
+      const destStyle = !isWaste ? 'border:1px solid #a855f7; color:#c084fc; background:rgba(168,85,247,0.08);' : '';
+
+      let actionBtnHtml = "";
+      if (isWaste) {
+        actionBtnHtml = `
+          <button class="det-confirm-btn" id="btn-confirm-det-${idx}">
+            ✓ Confirm & Record in Digital Twin
+          </button>
+        `;
+      } else {
+        actionBtnHtml = `
+          <button class="det-confirm-btn" disabled style="background:#2e1065; color:#c084fc; border:1px solid #a855f7; cursor:not-allowed; opacity:0.9; font-size:13px;">
+            👤 Citizen Detected (Uncategorized Non-Waste)
+          </button>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="det-header-row">
+          <span class="det-title">${!isWaste ? '👤 ' : ''}${det.object_identity}</span>
+          <span class="det-conf-badge" style="${badgeStyle}">${!isWaste ? 'Non-Waste // ' : ''}${det.confidence_pct}% Confidence</span>
+        </div>
+        <div class="det-material-tag">
+          <strong>Entity:</strong> ${det.candidate_material}
+        </div>
+        <div class="det-bin-route-box" style="${destStyle}">
+          <strong>Classification:</strong> ${det.bin_target || det.suggested_category}
+        </div>
+        <p class="det-guidance-text">
+          <strong>Guidance:</strong> ${prep}
+        </p>
+        ${actionBtnHtml}
+      `;
+
+      if (isWaste) {
+        const btn = card.querySelector(`#btn-confirm-det-${idx}`);
+        if (btn) {
+          btn.addEventListener("click", () => this.confirmScan(det, data.detection_id, btn));
+        }
+      }
+
+      this.detectionsList.appendChild(card);
+    });
+  }
+
+  async confirmScan(det, batchId, btnEl) {
+    if (det.is_waste === false || det.suggested_category === "Uncategorized" || det.raw_class === "person") {
+      if (window.showEcoSyncToast) {
+        window.showEcoSyncToast("Non-waste entity (Person) cannot be logged as waste.", "warning");
+      }
+      return;
+    }
+
+    btnEl.disabled = true;
+    btnEl.textContent = "Recording...";
+
+    try {
+      const resp = await fetch("/api/household/scans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          detection_id: batchId,
+          image_url: this.currentData.image ? this.currentData.image.url : "",
+          item_name: det.object_identity,
+          category: det.suggested_category,
+          material: det.candidate_material,
+          confidence: det.confidence,
+          action_taken: `Sorted into ${det.bin_target || det.suggested_category}`,
+          estimated_weight_kg: det.estimated_weight_kg || 0.05,
+          user_notes: `Confirmed via EcoSync Vision Studio: ${det.raw_class}`
+        })
+      });
+
+      const res = await resp.json();
+      if (res.status === "success") {
+        btnEl.textContent = "✓ Recorded in Database";
+        btnEl.style.backgroundColor = "#166534";
+        btnEl.style.color = "#ffffff";
+        btnEl.style.borderColor = "#22c55e";
         if (window.showEcoSyncToast) {
-          window.showEcoSyncToast(`Confirmed "${itemName}" sorted into ${category}! (+${weight} kg logged)`);
+          window.showEcoSyncToast(`✓ Recorded: ${det.object_identity} saved to database!`);
         }
         if (window.householdImpact) {
           window.householdImpact.fetchImpactMetrics();
           window.householdImpact.fetchHistory();
         }
-        if (window.ecosyncApp) window.ecosyncApp.fetchHomeLiveStats();
-        if (window.digitalTwin) window.digitalTwin.fetchTopology();
-      } else {
-        if (window.showEcoSyncToast) {
-          window.showEcoSyncToast("Confirmation error: " + data.message, "warning");
+        if (window.ecosyncApp) {
+          window.ecosyncApp.fetchHomeLiveStats();
         }
+      } else {
+        btnEl.disabled = false;
+        btnEl.textContent = "Retry Recording";
+        alert(res.message || "Could not record scan.");
       }
     } catch (err) {
-      console.error("Confirmation error:", err);
-      if (window.showEcoSyncToast) {
-        window.showEcoSyncToast("Failed to record household scan action.", "warning");
-      }
+      console.error("Error confirming scan:", err);
+      btnEl.disabled = false;
+      btnEl.textContent = "Retry Recording";
     }
   }
 }
 
-window.WasteScanner = WasteScanner;
+if (!window.wasteScanner) {
+  window.wasteScanner = new WasteScanner();
+}
+window.ecosyncScanner = window.wasteScanner;

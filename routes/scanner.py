@@ -74,6 +74,21 @@ def detect_waste():
         saved_filepath = sample_file
         conf_threshold = float(request.json.get("confidence_threshold", Config.DEFAULT_CONFIDENCE_THRESHOLD))
 
+    elif request.is_json and "image_base64" in request.json:
+        # Live camera frame capture encoded in Base64 Data URL
+        try:
+            import base64
+            data_uri = request.json["image_base64"]
+            header, encoded = data_uri.split(",", 1) if "," in data_uri else ("", data_uri)
+            image_bytes = base64.b64decode(encoded)
+            unique_name = f"cam_{uuid.uuid4().hex[:10]}.jpg"
+            saved_filepath = Config.UPLOAD_FOLDER / unique_name
+            with open(saved_filepath, "wb") as f:
+                f.write(image_bytes)
+            conf_threshold = float(request.json.get("confidence_threshold", Config.DEFAULT_CONFIDENCE_THRESHOLD))
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"Could not process camera image: {e}"}), 400
+
     else:
         return jsonify({"status": "error", "message": "No image payload provided."}), 400
 
@@ -88,29 +103,41 @@ def detect_waste():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @scanner_bp.route("/classifications/confirm", methods=["POST"])
+@scanner_bp.route("/household/scans", methods=["POST"])
 def confirm_classification():
     """
-    Records human verification or category correction into database,
-    creating a new verified waste batch in the operational lifecycle.
+    Records human verification, citizen disposal action, or category correction into SQLite,
+    persisting the record to both household_scans (is_demo=0) and waste_batches.
     """
     data = request.get_json()
     if not data:
         return jsonify({"status": "error", "message": "Missing JSON payload."}), 400
 
-    detection_id = data.get("detection_batch_id")
-    confirmed_category = data.get("confirmed_category")
-    sub_type = data.get("sub_type", "Standard Secondary Material")
-    weight_kg = float(data.get("estimated_weight_kg", 5.0))
+    detection_id = data.get("detection_batch_id") or data.get("detection_id")
+    confirmed_category = data.get("confirmed_category") or data.get("category")
+    sub_type = data.get("sub_type") or data.get("item_name") or "Standard Secondary Material"
+    item_name = data.get("item_name") or sub_type
+    weight_kg = float(data.get("estimated_weight_kg", 0.05))
     purity_score = float(data.get("purity_score", 0.92))
     origin_cp = data.get("origin_collection_point_id", "CP-ALPHA")
     facility_id = data.get("current_facility_id", "MRF-01")
-    image_path = data.get("image_url", "")
-    notes = data.get("notes", "Human verification confirmed through EcoSync Scanner console.")
+    image_path = data.get("image_url") or data.get("image_path") or ""
+    action_taken = data.get("action_taken", "Confirmed & Segregated")
+    confidence = float(data.get("confidence", 0.88))
+    material = data.get("material", sub_type)
+    notes = data.get("user_notes") or data.get("notes") or "Verified through EcoSync Vision Studio console."
 
     if not confirmed_category:
         return jsonify({"status": "error", "message": "confirmed_category is required."}), 400
 
+    if confirmed_category.lower() in ("uncategorized", "non-waste", "person") or "person" in item_name.lower():
+        return jsonify({
+            "status": "error",
+            "message": "Human presence (Person) is categorized as Uncategorized. Non-waste entities cannot be logged into the waste ledger."
+        }), 400
+
     new_batch_id = f"BATCH-{uuid.uuid4().hex[:6].upper()}"
+    household_scan_id = f"HS-{uuid.uuid4().hex[:8].upper()}"
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -142,21 +169,15 @@ def confirm_classification():
         # 3. Add to audit log
         cursor.execute("""
             INSERT INTO batch_audit_log (batch_id, previous_status, new_status, notes, actor)
-            VALUES (?, 'Classified', 'Verified', ?, 'Quality Inspector')
+            VALUES (?, 'Classified', 'Verified', ?, 'Citizen User')
         """, (new_batch_id, notes))
 
-        # 4. Insert into household_scans table for household citizen impact tracking
-        item_name = data.get("item_name", sub_type)
-        action_taken = data.get("action_taken", "Confirmed & Segregated")
-        confidence = float(data.get("confidence", 0.0))
-        material = data.get("material", sub_type)
-        household_scan_id = f"HS-{uuid.uuid4().hex[:8].upper()}"
-
+        # 4. Insert into household_scans table for household citizen impact tracking (Real record: is_demo = 0)
         cursor.execute("""
             INSERT INTO household_scans (
                 id, detection_id, image_url, item_name, category, material, 
-                confidence, action_taken, estimated_weight_kg, user_notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                confidence, action_taken, estimated_weight_kg, user_notes, is_demo
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         """, (
             household_scan_id, valid_detection_fk, image_path, item_name, 
             confirmed_category, material, confidence, action_taken, weight_kg, notes
@@ -166,6 +187,7 @@ def confirm_classification():
 
     return jsonify({
         "status": "success",
-        "message": f"Material confirmed and batch {new_batch_id} created in operational state 'Verified'.",
-        "batch_id": new_batch_id
+        "message": f"Waste item '{item_name}' successfully recorded and logged into persistent database.",
+        "batch_id": new_batch_id,
+        "id": household_scan_id
     })

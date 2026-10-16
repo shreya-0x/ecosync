@@ -292,7 +292,7 @@ class AdvisoryEngine:
                 "### How the Digital Twin & Scenario Simulation Work 🌐🔄\n\n"
                 "**1. What It Represents:** A digital model of the waste journey from your home to collection trucks, optical sorting plants, and secondary recycling processors.\n\n"
                 "**2. The Power of Source Segregation:** When households separate waste at source, sorting plants run at >90% purity. When unsegregated, up to 25% of recyclables are ruined by contamination.\n\n"
-                "**3. Collection Efficiency:** Simulating higher collection capacities or daily volumes shows judges and planners whether municipal fleets face bottlenecks or overflowing bins.\n\n"
+                "**3. Collection Efficiency:** Simulating higher collection capacities or daily volumes shows municipal planners and environmental administrators whether collection fleets face bottlenecks or overflowing bins.\n\n"
                 "**4. Projections vs Real Data:** All scenario sliders in the Digital Twin are simulated on-the-fly and **never alter your real verified scan records**."
             )
             return {

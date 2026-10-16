@@ -219,3 +219,49 @@ def simulation_scenario():
         processing_capacity_tpd=processing_cap
     )
     return jsonify(projection)
+
+# Campus Smart Bins API
+@digital_twin_bp.route("/bins", methods=["GET"])
+def get_smart_bins():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM smart_bins ORDER BY current_fill_pct DESC")
+        bins = [dict(row) for row in cursor.fetchall()]
+    return jsonify({"status": "success", "bins": bins})
+
+@digital_twin_bp.route("/bins/<bin_code>/service", methods=["POST"])
+def service_smart_bin(bin_code):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE smart_bins 
+            SET current_fill_pct = 0, status = 'Normal', last_serviced = CURRENT_TIMESTAMP
+            WHERE code = ?
+        """, (bin_code,))
+        conn.commit()
+        cursor.execute("SELECT * FROM smart_bins WHERE code = ?", (bin_code,))
+        updated = dict(cursor.fetchone() or {})
+    return jsonify({"status": "success", "message": f"Bin {bin_code} emptied & serviced.", "bin": updated})
+
+# Dispatch Routes API
+@digital_twin_bp.route("/routes", methods=["GET"])
+def get_dispatch_routes():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM dispatch_routes ORDER BY id ASC")
+        routes = [dict(row) for row in cursor.fetchall()]
+    return jsonify({"status": "success", "routes": routes})
+
+@digital_twin_bp.route("/routes/<route_id>/dispatch", methods=["POST"])
+def dispatch_route(route_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE dispatch_routes 
+            SET status = 'Dispatched'
+            WHERE id = ?
+        """, (route_id,))
+        conn.commit()
+        cursor.execute("SELECT * FROM dispatch_routes WHERE id = ?", (route_id,))
+        updated = dict(cursor.fetchone() or {})
+    return jsonify({"status": "success", "message": f"Route {route_id} dispatched.", "route": updated})

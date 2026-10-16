@@ -1,258 +1,298 @@
 /**
- * ECOSYNC — Responsible Citizen Waste Guide Controller
- * Searchable directory of household waste items, 8 canonical categories,
- * and 8-point responsible handling guidance.
+ * ECOSYNC — Sustainability Advisor (17 Classes) & Circular Guide
+ * Matches Reference Image 7 and all circular handbook features.
  */
+
+const ADVISOR_17_CLASSES = [
+  {
+    id: "redbull_can",
+    title: "Redbull can (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#60a5fa",
+    streamBg: "#0e2246",
+    bin: "Blue Bin (Recyclables)",
+    prep: "Rinse out residual liquid and crush. 100% infinitely recyclable.",
+    co2: "~0.12 kg CO2e",
+    tags: ["metals", "dry"]
+  },
+  {
+    id: "apple",
+    title: "apple (wet waste)",
+    stream: "WET WASTE",
+    streamColor: "#4ade80",
+    streamBg: "#0b2e1b",
+    bin: "Green Bin (Compost)",
+    prep: "Deposit in wet waste/compost. Decomposes into organic fertilizer.",
+    co2: "~0.05 kg CO2e",
+    tags: ["wet"]
+  },
+  {
+    id: "banana",
+    title: "banana (wet waste)",
+    stream: "WET WASTE",
+    streamColor: "#4ade80",
+    streamBg: "#0b2e1b",
+    bin: "Green Bin (Compost)",
+    prep: "Deposit in wet waste/compost. Rich in potassium and rapid bio-degradation.",
+    co2: "~0.05 kg CO2e",
+    tags: ["wet"]
+  },
+  {
+    id: "bottle",
+    title: "bottles (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#60a5fa",
+    streamBg: "#0e2246",
+    bin: "Blue Bin (Dry Recyclables)",
+    prep: "Empty liquid, compress to save bin space, cap tightly.",
+    co2: "~0.08 kg CO2e",
+    tags: ["plastics", "dry"]
+  },
+  {
+    id: "cucumber",
+    title: "cucumber (wet waste)",
+    stream: "WET WASTE",
+    streamColor: "#4ade80",
+    streamBg: "#0b2e1b",
+    bin: "Green Bin (Compost)",
+    prep: "Compostable organic matter. Keep separate from synthetic packaging.",
+    co2: "~0.05 kg CO2e",
+    tags: ["wet"]
+  },
+  {
+    id: "dairy_milk",
+    title: "dairy milk (wet waste)",
+    stream: "WET WASTE",
+    streamColor: "#4ade80",
+    streamBg: "#0b2e1b",
+    bin: "Green Bin (Wet Waste)",
+    prep: "Food scrap/chocolate residue goes to wet waste; clean foil wrapper to dry.",
+    co2: "~0.06 kg CO2e",
+    tags: ["wet", "plastics"]
+  },
+  {
+    id: "doritos",
+    title: "doritos (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#60a5fa",
+    streamBg: "#0e2246",
+    bin: "Blue Bin (Dry Waste)",
+    prep: "Empty crumbs. Multi-layer packaging goes to dry waste for energy recovery.",
+    co2: "~0.03 kg CO2e",
+    tags: ["plastics", "dry"]
+  },
+  {
+    id: "glass_materials",
+    title: "glass materials (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#60a5fa",
+    streamBg: "#0e2246",
+    bin: "Blue Bin (Glass Recycling)",
+    prep: "Rinse clean. Deposit gently to prevent broken glass hazards.",
+    co2: "~0.15 kg CO2e",
+    tags: ["dry"]
+  },
+  {
+    id: "cardboard",
+    title: "cardboard packaging (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#60a5fa",
+    streamBg: "#0e2246",
+    bin: "Blue Bin (Paper/Cardboard)",
+    prep: "Flatten boxes completely to conserve bin volume. Remove plastic tape.",
+    co2: "~0.18 kg CO2e",
+    tags: ["dry"]
+  },
+  {
+    id: "alum_can",
+    title: "aluminum beverage can (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#60a5fa",
+    streamBg: "#0e2246",
+    bin: "Blue Bin (Metals)",
+    prep: "Rinse empty and crush flat. Remelt uses 95% less energy than virgin mining.",
+    co2: "~0.14 kg CO2e",
+    tags: ["metals", "dry"]
+  },
+  {
+    id: "plastic_container",
+    title: "plastic food container (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#60a5fa",
+    streamBg: "#0e2246",
+    bin: "Blue Bin (Plastics)",
+    prep: "Wash off residual grease and food oil with a 5-second rinse before binning.",
+    co2: "~0.09 kg CO2e",
+    tags: ["plastics", "dry"]
+  },
+  {
+    id: "batteries",
+    title: "household batteries (hazardous)",
+    stream: "HAZARDOUS",
+    streamColor: "#f87171",
+    streamBg: "#2e0e0e",
+    bin: "Red Bin (Hazardous Depot)",
+    prep: "Tape terminals with clear scotch tape to prevent friction fires in bins.",
+    co2: "~0.22 kg CO2e",
+    tags: ["ewaste"]
+  },
+  {
+    id: "cables",
+    title: "electronic cables & e-waste",
+    stream: "E-WASTE",
+    streamColor: "#fbbf24",
+    streamBg: "#2f1d06",
+    bin: "Orange Hub (E-Waste)",
+    prep: "Copper extraction and certified electronic reclamation. Keep out of curbside bins.",
+    co2: "~0.25 kg CO2e",
+    tags: ["ewaste"]
+  },
+  {
+    id: "food_leftovers",
+    title: "food leftovers & peels (wet waste)",
+    stream: "WET WASTE",
+    streamColor: "#4ade80",
+    streamBg: "#0b2e1b",
+    bin: "Green Bin (Compost)",
+    prep: "Layer kitchen trimmings with dry brown leaves or newspaper to avoid odor.",
+    co2: "~0.06 kg CO2e",
+    tags: ["wet"]
+  },
+  {
+    id: "paper_cup",
+    title: "disposable paper cup (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#94a3b8",
+    streamBg: "#1e293b",
+    bin: "Gray Bin (General Trash)",
+    prep: "Poly-coated interior plastic barrier requires specialized cup pulping.",
+    co2: "~0.02 kg CO2e",
+    tags: ["dry"]
+  },
+  {
+    id: "styrofoam",
+    title: "styrofoam & bubble wrap (dry waste)",
+    stream: "DRY WASTE",
+    streamColor: "#94a3b8",
+    streamBg: "#1e293b",
+    bin: "Gray / Special Packaging Depot",
+    prep: "Bag separately to avoid crumbling into lightweight microplastic beads.",
+    co2: "~0.04 kg CO2e",
+    tags: ["plastics", "dry"]
+  },
+  {
+    id: "medicines",
+    title: "expired medicines & blister packs",
+    stream: "HAZARDOUS",
+    streamColor: "#f87171",
+    streamBg: "#2e0e0e",
+    bin: "Red / Pharmacy Drop-off",
+    prep: "Take to pharmacy return kiosk. Never flush antibiotics down toilets or drains.",
+    co2: "~0.10 kg CO2e",
+    tags: ["ewaste"]
+  }
+];
 
 class WasteGuide {
   constructor() {
-    this.container = document.getElementById("view-guide");
-    this.searchInput = document.getElementById("guide-search-input");
-    this.localityInput = document.getElementById("guide-locality-input");
-    this.categoriesContainer = document.getElementById("guide-categories-grid");
-    this.itemsContainer = document.getElementById("guide-items-grid");
-    this.resultsCountEl = document.getElementById("guide-results-count");
-    this.filterPillsContainer = document.getElementById("guide-filter-pills");
-
-    this.activeCategory = "";
-    this.currentQuery = "";
-    this.currentLocality = "";
-    this.debounceTimer = null;
-
+    this.cardsContainer = document.getElementById("advisor-cards-container");
+    this.filterBar = document.getElementById("advisor-filter-bar");
+    this.currentFilter = "all";
     this.init();
   }
 
   init() {
-    if (!this.container) return;
-
-    this.fetchCategories();
-    this.fetchItems();
-
-    if (this.searchInput) {
-      this.searchInput.addEventListener("input", (e) => {
-        clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(() => {
-          this.currentQuery = e.target.value.trim();
-          this.fetchItems();
-        }, 250);
-      });
-    }
-
-    if (this.localityInput) {
-      this.localityInput.addEventListener("change", (e) => {
-        this.currentLocality = e.target.value.trim();
-        this.fetchItems();
-      });
-    }
+    this.renderAdvisorCards();
+    this.initFilterEvents();
+    this.initChecklist();
   }
 
-  async fetchCategories() {
-    try {
-      const resp = await fetch("/api/waste-guide/categories");
-      const data = await resp.json();
-      if (data.status === "success") {
-        this.renderCategories(data.categories || []);
-        this.renderFilterPills(data.categories || []);
-      }
-    } catch (err) {
-      console.error("Error fetching waste categories:", err);
-    }
+  initFilterEvents() {
+    if (!this.filterBar) return;
+    this.filterBar.querySelectorAll(".btn-advisor-filter").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        this.filterBar.querySelectorAll(".btn-advisor-filter").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.currentFilter = btn.getAttribute("data-filter");
+        this.renderAdvisorCards();
+      });
+    });
   }
 
-  renderCategories(categories) {
-    if (!this.categoriesContainer) return;
-    this.categoriesContainer.innerHTML = "";
+  renderAdvisorCards() {
+    if (!this.cardsContainer) return;
+    this.cardsContainer.innerHTML = "";
 
-    categories.forEach((cat) => {
+    const filtered = this.currentFilter === "all"
+      ? ADVISOR_17_CLASSES
+      : ADVISOR_17_CLASSES.filter(c => c.tags.includes(this.currentFilter));
+
+    filtered.forEach(item => {
       const card = document.createElement("div");
-      card.className = "guide-cat-card";
+      card.className = "advisor-class-card";
       card.innerHTML = `
-        <div class="guide-cat-header">
-          <span class="guide-cat-icon">${cat.icon}</span>
-          <span class="guide-bin-badge ${cat.badge_class || 'badge-blue'}">${cat.bin_color}</span>
+        <div class="advisor-card-top">
+          <h4 class="advisor-card-title">${item.title}</h4>
+          <span class="advisor-stream-tag" style="color:${item.streamColor}; background:${item.streamBg};">${item.stream}</span>
         </div>
-        <h4 class="guide-cat-title">${cat.name}</h4>
-        <p class="guide-cat-desc">${cat.short_desc}</p>
-        <div class="guide-cat-meta">
-          <span>Bin: <strong>${cat.bin_label}</strong></span>
-        </div>
+        <div class="advisor-bin-dest">${item.bin}</div>
+        <p class="advisor-prep-copy">${item.prep}</p>
+        <div class="advisor-co2-estimate">Configured estimate: ${item.co2}</div>
       `;
+      this.cardsContainer.appendChild(card);
+    });
+  }
 
-      card.addEventListener("click", () => {
-        this.setCategoryFilter(cat.name);
+  initChecklist() {
+    const group = document.getElementById("checklist-items-group");
+    const counterText = document.getElementById("checklist-counter-text");
+    const progressBar = document.getElementById("checklist-progress-bar");
+    const btnReset = document.getElementById("btn-reset-checklist");
+
+    if (!group) return;
+
+    const saved = JSON.parse(localStorage.getItem("ecosync_checklist") || "{}");
+
+    const updateChecklistUI = () => {
+      const rows = group.querySelectorAll(".checklist-item-row");
+      let completed = 0;
+
+      rows.forEach((row, idx) => {
+        const cb = row.querySelector(".checklist-checkbox");
+        const isDone = !!saved[idx];
+        if (cb) cb.checked = isDone;
+        row.classList.toggle("completed", isDone);
+        if (isDone) completed++;
       });
 
-      this.categoriesContainer.appendChild(card);
-    });
-  }
+      const total = rows.length;
+      const pct = Math.round((completed / total) * 100);
+      if (counterText) counterText.textContent = `${completed} of ${total} Completed (${pct}%)`;
+      if (progressBar) progressBar.style.width = `${pct}%`;
 
-  renderFilterPills(categories) {
-    if (!this.filterPillsContainer) return;
-    this.filterPillsContainer.innerHTML = "";
+      localStorage.setItem("ecosync_checklist", JSON.stringify(saved));
+    };
 
-    // "All" pill
-    const allPill = document.createElement("button");
-    allPill.className = `btn-guide-pill ${this.activeCategory === "" ? "active" : ""}`;
-    allPill.textContent = "All Categories";
-    allPill.addEventListener("click", () => this.setCategoryFilter(""));
-    this.filterPillsContainer.appendChild(allPill);
-
-    categories.forEach((cat) => {
-      const pill = document.createElement("button");
-      pill.className = `btn-guide-pill ${this.activeCategory === cat.name ? "active" : ""}`;
-      pill.innerHTML = `${cat.icon} ${cat.name}`;
-      pill.addEventListener("click", () => this.setCategoryFilter(cat.name));
-      this.filterPillsContainer.appendChild(pill);
-    });
-  }
-
-  setCategoryFilter(catName) {
-    this.activeCategory = catName;
-    document.querySelectorAll(".btn-guide-pill").forEach((btn) => {
-      const isMatch = catName === "" 
-        ? btn.textContent === "All Categories" 
-        : btn.textContent.includes(catName);
-      btn.classList.toggle("active", isMatch);
-    });
-    this.fetchItems();
-  }
-
-  async fetchItems() {
-    if (!this.itemsContainer) return;
-    this.itemsContainer.innerHTML = `<div class="guide-loading">Searching citizen waste guide...</div>`;
-
-    try {
-      const params = new URLSearchParams();
-      if (this.currentQuery) params.append("q", this.currentQuery);
-      if (this.activeCategory) params.append("category", this.activeCategory);
-      if (this.currentLocality) params.append("locality", this.currentLocality);
-
-      const resp = await fetch(`/api/waste-guide?${params.toString()}`);
-      const data = await resp.json();
-
-      if (data.status === "success") {
-        this.renderItems(data.items || []);
-        if (this.resultsCountEl) {
-          this.resultsCountEl.textContent = `${data.count} item${data.count === 1 ? "" : "s"} found`;
+    group.querySelectorAll(".checklist-item-row").forEach((row, idx) => {
+      const cb = row.querySelector(".checklist-checkbox");
+      row.addEventListener("click", (e) => {
+        if (e.target !== cb) {
+          cb.checked = !cb.checked;
         }
-      }
-    } catch (err) {
-      console.error("Error fetching waste items:", err);
-      this.itemsContainer.innerHTML = `<div class="guide-error">Failed to load waste guide items.</div>`;
-    }
-  }
+        saved[idx] = cb.checked;
+        updateChecklistUI();
+      });
+    });
 
-  renderItems(items) {
-    if (!this.itemsContainer) return;
-    this.itemsContainer.innerHTML = "";
-
-    if (items.length === 0) {
-      this.itemsContainer.innerHTML = `
-        <div class="guide-empty-state">
-          <div class="empty-icon">🔍</div>
-          <h3>No matching items found</h3>
-          <p>Try searching for common household items like "bottle", "battery", "cooking oil", or select a category filter.</p>
-        </div>
-      `;
-      return;
+    if (btnReset) {
+      btnReset.addEventListener("click", () => {
+        for (let k in saved) delete saved[k];
+        updateChecklistUI();
+      });
     }
 
-    items.forEach((item) => {
-      const card = document.createElement("div");
-      card.className = "guide-item-card";
-
-      const g = item.guide || {};
-      const catInfo = item.category_info || {};
-
-      card.innerHTML = `
-        <div class="guide-item-header">
-          <div>
-            <span class="guide-bin-badge ${catInfo.badge_class || 'badge-blue'}">${catInfo.icon || '📦'} ${item.category}</span>
-            <h3 class="guide-item-title">${item.display_name}</h3>
-            <span class="guide-item-material">Material: ${item.material}</span>
-          </div>
-          <button class="btn-toggle-guide-expand" title="Toggle 8-Point Guidance">▼ How to Handle</button>
-        </div>
-
-        <div class="guide-quick-summary">
-          <div class="guide-summary-row">
-            <span class="summary-label">Target Bin:</span>
-            <span class="summary-value">${g.which_bin || 'See local rules'}</span>
-          </div>
-          <div class="guide-summary-row">
-            <span class="summary-label">Key Action:</span>
-            <span class="summary-value">${g.what_to_do_now || 'Inspect cleanliness'}</span>
-          </div>
-        </div>
-
-        <!-- Collapsible Full 8-Point Citizen Instructions -->
-        <div class="guide-item-details">
-          <div class="guide-eight-points">
-            <div class="guide-point-box">
-              <div class="point-num">1. What is it?</div>
-              <div class="point-text">${g.what_is_it || ''}</div>
-            </div>
-            <div class="guide-point-box highlight">
-              <div class="point-num">2. What should I do now?</div>
-              <div class="point-text">${g.what_to_do_now || ''}</div>
-            </div>
-            <div class="guide-point-box">
-              <div class="point-num">3. Which bin should I use?</div>
-              <div class="point-text"><strong>${g.which_bin || ''}</strong></div>
-            </div>
-            <div class="guide-point-box">
-              <div class="point-num">4. How should I prepare it?</div>
-              <div class="point-text">${g.how_to_prepare || ''}</div>
-            </div>
-            <div class="guide-point-box warning">
-              <div class="point-num">5. What should I avoid?</div>
-              <div class="point-text">${g.what_to_avoid || ''}</div>
-            </div>
-            <div class="guide-point-box">
-              <div class="point-num">6. Where should it go?</div>
-              <div class="point-text">${g.where_should_it_go || ''}</div>
-            </div>
-            <div class="guide-point-box">
-              <div class="point-num">7. Why does this matter?</div>
-              <div class="point-text">${g.why_matters || ''}</div>
-            </div>
-            <div class="guide-point-box action">
-              <div class="point-num">8. Good-Citizen Action:</div>
-              <div class="point-text">${g.citizen_action || ''}</div>
-            </div>
-          </div>
-
-          <div class="guide-item-footer">
-            <button class="btn-primary-sm btn-guide-scan-match">📷 Scan This With Camera</button>
-            <button class="btn-secondary-sm btn-guide-ask-ai" data-item="${item.display_name}">💬 Ask AI Advisor</button>
-          </div>
-        </div>
-      `;
-
-      // Expand / Collapse
-      const toggleBtn = card.querySelector(".btn-toggle-guide-expand");
-      const detailsEl = card.querySelector(".guide-item-details");
-      toggleBtn.addEventListener("click", () => {
-        const isOpen = detailsEl.classList.toggle("open");
-        toggleBtn.textContent = isOpen ? "▲ Close Guidance" : "▼ How to Handle";
-      });
-
-      // Actions
-      card.querySelector(".btn-guide-scan-match").addEventListener("click", () => {
-        if (window.ecosyncApp) {
-          window.ecosyncApp.switchView("scanner");
-        }
-      });
-
-      card.querySelector(".btn-guide-ask-ai").addEventListener("click", () => {
-        if (window.aiAdvisor) {
-          window.aiAdvisor.openWithPrompt(`How should I handle and dispose of ${item.display_name}?`);
-        }
-      });
-
-      this.itemsContainer.appendChild(card);
-    });
+    updateChecklistUI();
   }
 }
 
-window.WasteGuide = WasteGuide;
+window.wasteGuide = new WasteGuide();

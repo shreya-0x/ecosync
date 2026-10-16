@@ -1,7 +1,7 @@
 # EcoSync — Smart Waste Management Digital Twin
-### Intelligent Waste-Management & Responsible-Citizenship Assistant for Everyday Households
+### Enterprise Circular Intelligence & Household Resource Recovery Platform
 
-> **DSU Code Clash 2.0 | Problem Statement 01: Smart Waste Management Digital Twin**  
+> **Municipal Smart Waste Management Digital Twin**  
 > *"Empowering households with computer vision, operational simulation, and generative AI to segregate responsibly and build zero-waste communities."*
 
 ---
@@ -16,7 +16,7 @@
 4. **How can I reduce, reuse, or recycle it?**
 5. **How do my everyday habits improve my local community?**
 
-Simultaneously, EcoSync provides municipal stakeholders and hackathon judges with a **credible, data-connected Digital Twin** and an **interactive scenario simulator** to project how community participation affects collection efficiency, landfill diversion, and environmental recovery.
+Simultaneously, EcoSync provides municipal stakeholders, environmental officers, and evaluators with a **credible, data-connected Digital Twin** and an **interactive scenario simulator** to project how community participation affects collection efficiency, landfill diversion, and environmental recovery.
 
 ---
 
@@ -66,7 +66,7 @@ flowchart LR
   - Daily Landfilled Waste (Tons/day) reduction (-Y TPD)
   - Avoided Daily GHG Emissions (+Z MT CO₂e/day)
   - Contamination Rejection Loss (-C TPD)
-- **Non-Destructive Scenario Simulator**: Planners and judges can model policy adjustments without altering historical records:
+- **Non-Destructive Scenario Simulator**: Planners and evaluators can model policy adjustments without altering historical records:
   - **Daily Waste Volume** (50 - 500 TPD)
   - **Citizen Segregation Compliance** (10% - 95%)
   - **Collection Capacity** (100 - 400 TPD)
@@ -88,9 +88,9 @@ flowchart LR
 
 ---
 
-## 🔬 Must-Have Demo Mode (Judge-Ready)
+## 🔬 Must-Have Demo Mode (Executive & Evaluator Ready)
 
-EcoSync features a dedicated, judge-ready **Demo Mode** requiring **zero external dependencies, zero API keys, and zero camera setup**:
+EcoSync features a dedicated, executive-ready **Demo Mode** requiring **zero external dependencies, zero API keys, and zero camera setup**:
 - **One-Click Launch**: Click **"Demo Data: ON"** in the sticky header or **"Explore Demo Data (60s Tour)"** on the homepage.
 - **60-Second Guided Tour Modal**: Direct 5-step interactive walkthrough guiding evaluators through the Scanner, 8-Category Guide, Digital Twin Simulator, Impact Dashboard, and AI Advisor.
 - **Pre-Populated Fictional Data**: 10 realistic demonstration records distributed across the last 5 days covering all 8 waste categories with timestamps and EPA WARM lifecycle metrics.
@@ -145,7 +145,7 @@ ecosync/
 ├── config.py                   # Central configuration & upload parameters
 ├── requirements.txt            # Python dependencies (Flask, Ultralytics, PyTorch)
 ├── .env.example                # Environment variables template (GEMINI_API_KEY)
-├── README.md                   # Complete architectural documentation & judge guide
+├── README.md                   # Complete architectural documentation & platform guide
 ├── database/
 │   ├── db.py                   # SQLite connection manager, schema runner, demo seeder & reset
 │   ├── schema.sql              # Table definitions (household_scans with is_demo, waste_batches, etc.)
@@ -238,8 +238,8 @@ All **22 automated tests** will execute and validate the Computer Vision inferen
 
 ---
 
-## 🎯 60-Second Hackathon Walkthrough for Judges
-
+## 🎯 60-Second Executive Platform Tour
+ 
 | Step | View | What to Test & Observe |
 | :--- | :--- | :--- |
 | **1. Household Hub** | **Home** | • Observe live community stats populated with clearly labeled `[DEMO DATA SEEDED]` tags.<br>• Click any quick item card (e.g. *PET Plastic Bottle* or *Batteries*) for instant 5-second handling rules. |
@@ -259,5 +259,5 @@ All **22 automated tests** will execute and validate the Computer Vision inferen
 
 ---
 
-*EcoSync — Developed for DSU Code Clash 2.0 | Built with PyTorch, Ultralytics YOLO, Flask, SQLite, and Google Gemini API.*
+*EcoSync — Enterprise Circular Economy Platform | Built with PyTorch, Ultralytics YOLO, Flask, SQLite, and Google Gemini API.*
 
