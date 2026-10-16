@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoSync — Smart Household Waste Management & Digital Twin</title>
+  <meta name="description" content="EcoSync: Intelligent household waste management platform for everyday families. Genuine Computer Vision object scanner, 8-point responsible citizen guide, interactive circular economy digital twin, and grounded AI assistant.">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23047857'/><path d='M30 65 C30 40, 50 30, 70 30 C70 55, 50 65, 30 65 Z' fill='%23d1fae5'/><path d='M30 65 L60 38' stroke='%23047857' stroke-width='4'/></svg>">
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+
+  <!-- Global Sticky Header -->
+  <header class="site-header">
+    <a href="#" class="header-brand" id="header-brand-logo">
+      <div class="brand-icon-wrap">🌱</div>
+      <div class="brand-text-group">
+        <div class="brand-text-row">
+          <span class="brand-title">EcoSync</span>
+          <span class="brand-badge">Household Edition</span>
+        </div>
+        <div class="brand-status-indicator">
+          <span class="status-pulse-dot"></span>
+          <span id="header-model-badge">AI MODEL: ONLINE</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Primary Navigation Links -->
+    <nav>
+      <ul class="header-nav" id="main-header-nav">
+        <li><a class="nav-link active" data-view="home"><span class="nav-link-icon">🏠</span> Home</a></li>
+        <li><a class="nav-link" data-view="scanner"><span class="nav-link-icon">📷</span> Scan Waste</a></li>
+        <li><a class="nav-link" data-view="guide"><span class="nav-link-icon">📖</span> Waste Guide</a></li>
+        <li><a class="nav-link" data-view="twin"><span class="nav-link-icon">🌐</span> Digital Twin</a></li>
+        <li><a class="nav-link" data-view="impact"><span class="nav-link-icon">📊</span> My Impact</a></li>
+      </ul>
+    </nav>
+
+    <!-- Secondary Actions -->
+    <div class="header-actions">
+      <button class="btn-header-demo active" id="btn-header-demo-toggle">
+        <span>⚡</span>
+        <span id="header-demo-btn-text">Demo Data: ON</span>
+      </button>
+      <button class="btn-header-advisor" data-nav-target="advisor">
+        <span>💬</span>
+        <span>AI Advisor</span>
+      </button>
+      <button class="btn-header-cta" onclick="window.ecosyncApp.switchView('scanner')">
+        <span>📷</span>
+        <span>Scan Item</span>
+      </button>
+      <button class="btn-mobile-nav" id="btn-mobile-menu" aria-label="Toggle navigation">
+        ☰
+      </button>
+    </div>
+  </header>
+
+  <!-- Global Demo Mode Sticky Banner -->
+  <div class="demo-banner-strip" id="global-demo-banner">
+    <div class="demo-banner-left">
+      <span class="demo-banner-pill">DEMO DATA ACTIVE</span>
+      <span>Seeded demonstration records loaded for Hackathon evaluation. Real inference runs on live camera or uploads.</span>
+    </div>
+    <div class="demo-banner-actions">
+      <button class="btn-demo-action" id="btn-open-walkthrough">⏱️ 60s Judge Tour</button>
+      <button class="btn-demo-action" id="btn-reset-demo-records">🔄 Reset Demo Data</button>
+      <button class="btn-demo-action" id="btn-exit-demo-mode">✕ Exit Demo</button>
+    </div>
+  </div>
+
+  <!-- Operational Platform Views -->
+  <main id="operational-platform">
+
+    <!-- ====================================================================
+         VIEW 1: HOME (HOUSEHOLD HUB)
+         ==================================================================== -->
+    <section class="platform-view active" id="view-home">
+      <!-- Hero Welcome Card -->
+      <div class="home-hero-card">
+        <span class="hero-badge-pill">Smart Waste Digital Twin // DSU Code Clash 2.0 PS01</span>
+        <h1 class="home-hero-title">Smart waste decisions made simple for every household.</h1>
+        <p class="home-hero-sub">
+          Know exactly which bin to use, how to clean packaging, and what to avoid. Scan items with real Computer Vision, track the journey through your city's circular recovery Digital Twin, and see the genuine environmental footprint you save.
+        </p>
+
+        <div class="hero-actions-row">
+          <button class="btn-primary" id="btn-hero-scan">
+            <span>📷</span>
+            <span>Scan Waste with Camera</span>
+          </button>
+          <button class="btn-secondary" id="btn-hero-demo-tour">
+            <span>⚡</span>
+            <span>Explore Demo Data (60s Tour)</span>
+          </button>
+          <button class="btn-secondary" id="btn-hero-guide">
+            <span>🔍</span>
+            <span>Search Waste Guide</span>
+          </button>
+          <button class="btn-secondary" id="btn-hero-twin">
+            <span>🌐</span>
+            <span>Explore City Digital Twin</span>
+          </button>
+        </div>
+
+        <div class="hero-trust-strip">
+          <span>✓ Genuine YOLO11n Computer Vision</span>
+          <span>✓ 8 Canonical Bin Classifications</span>
+          <span>✓ Documented EPA WARM Lifecycle Factors</span>
+          <span>✓ Grounded Safety Warnings</span>
+        </div>
+      </div>
+
+      <!-- Live Community & Household Stats Strip -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Household Telemetry Summary</span>
+        <span class="sim-tag-badge" id="home-demo-indicator" style="display: inline-block;">[DEMO DATA SEEDED]</span>
+      </div>
+      <div class="home-stats-strip">
+        <div class="home-stat-box">
+          <div class="stat-box-label">Items Scanned</div>
+          <div class="stat-box-num" id="home-stat-scans">0</div>
+          <div class="stat-box-note">Analyzed by computer vision</div>
+        </div>
+
+        <div class="home-stat-box">
+          <div class="stat-box-label">Confirmed Actions</div>
+          <div class="stat-box-num" id="home-stat-confirmed">0</div>
+          <div class="stat-box-note">Citizen verified & segregated</div>
+        </div>
+
+        <div class="home-stat-box">
+          <div class="stat-box-label">Landfill Diverted</div>
+          <div class="stat-box-num" id="home-stat-diverted">0 kg</div>
+          <div class="stat-box-note">Physical waste offset</div>
+        </div>
+
+        <div class="home-stat-box">
+          <div class="stat-box-label">Avoided Emissions</div>
+          <div class="stat-box-num" id="home-stat-offset">0 kg CO₂e</div>
+          <div class="stat-box-note">EPA WARM v15 verified</div>
+        </div>
+      </div>
+
+      <!-- Quick Bin Finder Matrix -->
+      <div class="section-headline-group">
+        <h2 class="section-title">Common Household Items: Which Bin?</h2>
+        <p class="section-sub">Tap any common household item for instant disposal rules and the 5-second preparation step.</p>
+      </div>
+
+      <div class="quick-bin-matrix">
+        <div class="quick-item-card" data-quick-item="plastic_bottle">
+          <div class="quick-item-icon">🧴</div>
+          <div class="quick-item-info">
+            <div class="quick-item-name">PET Plastic Bottle</div>
+            <span class="quick-item-bin" style="background:#eff6ff; color:#1e40af;">🔵 Blue Bin (Recyclable)</span>
+            <div class="quick-item-prep">Rinse empty, crush flat, leave cap attached.</div>
+          </div>
+        </div>
+
+        <div class="quick-item-card" data-quick-item="food_scraps">
+          <div class="quick-item-icon">🍌</div>
+          <div class="quick-item-info">
+            <div class="quick-item-name">Fruit & Veggie Scraps</div>
+            <span class="quick-item-bin" style="background:#f0fdf4; color:#166534;">🟢 Green Bin (Compost)</span>
+            <div class="quick-item-prep">Remove produce stickers; layer with dry leaves.</div>
+          </div>
+        </div>
+
+        <div class="quick-item-card" data-quick-item="pizza_box">
+          <div class="quick-item-icon">📦</div>
+          <div class="quick-item-info">
+            <div class="quick-item-name">Greasy Pizza Box</div>
+            <span class="quick-item-bin" style="background:#f8fafc; color:#334155;">🗑️ Tear in Half</span>
+            <div class="quick-item-prep">Recycle clean top lid; trash or compost greasy base.</div>
+          </div>
+        </div>
+
+        <div class="quick-item-card" data-quick-item="aa_battery">
+          <div class="quick-item-icon">🔋</div>
+          <div class="quick-item-info">
+            <div class="quick-item-name">Batteries (AA / Lithium)</div>
+            <span class="quick-item-bin" style="background:#fef2f2; color:#991b1b;">⚠️ Red / Hazard Depot</span>
+            <div class="quick-item-prep">NEVER in curbside bin; tape terminals with scotch tape.</div>
+          </div>
+        </div>
+
+        <div class="quick-item-card" data-quick-item="used_cooking_oil">
+          <div class="quick-item-icon">🛢️</div>
+          <div class="quick-item-info">
+            <div class="quick-item-name">Used Cooking Oil</div>
+            <span class="quick-item-bin" style="background:#faf5ff; color:#6b21a8;">🛢️ Sealed Bottle Depot</span>
+            <div class="quick-item-prep">Never pour down the drain! Cool and seal in a jar.</div>
+          </div>
+        </div>
+
+        <div class="quick-item-card" data-quick-item="aluminum_can">
+          <div class="quick-item-icon">🥫</div>
+          <div class="quick-item-info">
+            <div class="quick-item-name">Beverage Can</div>
+            <span class="quick-item-bin" style="background:#eff6ff; color:#1e40af;">🔵 Blue Bin (Recyclable)</span>
+            <div class="quick-item-prep">Empty all liquid; aluminum is infinitely recyclable!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4-Step Journey Infographic -->
+      <div class="section-headline-group">
+        <h2 class="section-title">The Circular Waste Journey</h2>
+        <p class="section-sub">How responsible household habits connect to municipal recovery and circular manufacturing.</p>
+      </div>
+
+      <div class="how-it-works-grid">
+        <div class="step-card">
+          <span class="step-number-tag">STAGE 01</span>
+          <h3 class="step-card-title">1. Your Kitchen Counter</h3>
+          <p class="step-card-desc">Scan waste items using EcoSync. Clean packaging and sort wet organic scraps into separate bins to prevent contamination.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number-tag">STAGE 02</span>
+          <h3 class="step-card-title">2. Neighborhood Route</h3>
+          <p class="step-card-desc">Municipal trucks pick up segregated waste on scheduled routes across 4 city collection zones (Harbor, Logistics, Downtown, Eastside).</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number-tag">STAGE 03</span>
+          <h3 class="step-card-title">3. Optical Sorting (MRF-01)</h3>
+          <p class="step-card-desc">Automated recovery conveyors use infrared and eddy currents to separate polymers, fibers, aluminum, and glass at 92% optical efficiency.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number-tag">STAGE 04</span>
+          <h3 class="step-card-title">4. Secondary Life</h3>
+          <p class="step-card-desc">Materials reach specialized recovery hubs: flaked into recycled PET, repulped into cartons, melted into fresh cans, or transformed into rich compost.</p>
+        </div>
+      </div>
+
+      <!-- Everyday Tips -->
+      <div class="section-headline-group">
+        <h2 class="section-title">Good Citizen Waste Habits</h2>
+        <p class="section-sub">Simple daily rules that protect sanitation workers and preserve recyclables.</p>
+      </div>
+
+      <div class="tips-grid">
+        <div class="tip-card">
+          <h3 class="tip-title">🧼 The 5-Second Rinse</h3>
+          <p class="tip-text">Leftover food residue breeds bacteria and ruins whole bales of cardboard and plastic. A quick 5-second rinse with dishwater makes packaging genuinely recyclable.</p>
+        </div>
+
+        <div class="tip-card">
+          <h3 class="tip-title">⚠️ Never Trash Loose Batteries</h3>
+          <p class="tip-text">Lithium cells get crushed inside compactor trucks, causing sudden severe fires. Always tape loose battery terminals and take them to supermarket drop-offs.</p>
+        </div>
+
+        <div class="tip-card">
+          <h3 class="tip-title">📦 Flatten All Delivery Boxes</h3>
+          <p class="tip-text">Unbroken cartons waste up to 70% of collection truck volume with empty air. Flattening boxes saves truck fuel and prevents bin overflow.</p>
+        </div>
+
+        <div class="tip-card">
+          <h3 class="tip-title">🛢️ Keep Grease Out of Plumbed Drains</h3>
+          <p class="tip-text">Hot cooking oil hardens inside city pipes into giant fatbergs that choke municipal sewer systems. Pour cooled oil into a sealed bottle for biodiesel pickup.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 2: SMART WASTE SCANNER (COMPUTER VISION)
+         ==================================================================== -->
+    <section class="platform-view" id="view-scanner">
+      <div class="view-header">
+        <div>
+          <h1 class="view-headline">Smart Waste Scanner</h1>
+          <p class="view-subline">Take a photo with your phone/webcam or upload an image. Real YOLO11n Computer Vision identifies items, names the exact bin, and gives practical 8-point handling guidance.</p>
+        </div>
+        <div class="stage-toolbar-controls">
+          <button class="btn-primary" id="btn-toggle-camera">📷 Open Live Camera</button>
+        </div>
+      </div>
+
+      <div class="scanner-grid">
+        <!-- Left Panel: Camera, Dropzone & Bounding Stage -->
+        <div class="scanner-left-panel">
+          <!-- Dropzone -->
+          <div class="scanner-dropzone-area" id="scanner-dropzone">
+            <input type="file" id="scanner-file-input" class="dropzone-file-input" accept="image/jpeg,image/png,image/webp">
+            <div class="dropzone-icon">📷</div>
+            <h3 class="dropzone-title">UPLOAD OR DRAG WASTE PHOTO</h3>
+            <p class="dropzone-sub">Accepts JPEG, PNG, or WEBP up to 16MB</p>
+          </div>
+
+          <!-- Household Test Samples -->
+          <div class="sample-presets-bar">
+            <span class="sample-presets-label">Guided Samples (Genuine Inference):</span>
+            <button class="btn-sample-chip" data-sample-url="static/images/samples/photo_cans.jpg">Beverage Cans</button>
+            <button class="btn-sample-chip" data-sample-url="static/images/samples/photo_bottles.jpg">Water Bottles</button>
+            <button class="btn-sample-chip" data-sample-url="static/images/samples/photo_mixed.jpg">Mixed Stream</button>
+            <button class="btn-sample-chip" data-sample-url="static/images/samples/sample_boxes.jpg">Packaging Boxes</button>
+          </div>
+
+          <!-- Live Camera Viewfinder -->
+          <div class="camera-viewfinder-container" id="camera-viewfinder-container">
+            <video id="camera-video-stream" autoplay playsinline></video>
+            <div class="camera-controls-overlay">
+              <button class="btn-primary" id="btn-capture-frame">📸 Capture Frame</button>
+              <button class="btn-secondary" id="btn-pause-camera">Pause Feed</button>
+              <button class="btn-danger" id="btn-stop-camera">Close Camera</button>
+            </div>
+          </div>
+
+          <!-- Bounding Box Stage -->
+          <div class="bbox-stage-container" id="bbox-stage-container">
+            <div class="stage-wrapper">
+              <img id="bbox-image-display" src="" alt="Scan Preview">
+              <canvas id="bbox-overlay-canvas"></canvas>
+            </div>
+            <div class="stage-toolbar">
+              <div class="stage-toolbar-controls">
+                <label><input type="checkbox" id="toggle-show-boxes" checked> Show Boxes</label>
+                <label><input type="checkbox" id="toggle-show-labels" checked> Show Labels</label>
+              </div>
+              <div class="stage-toolbar-controls">
+                <span>Confidence Threshold: <strong id="scanner-conf-val-text">25%</strong></span>
+                <input type="range" id="scanner-conf-slider" min="0.10" max="0.90" step="0.05" value="0.25">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Results & 8-Point Guidance -->
+        <div class="scanner-right-panel" id="scanner-results-panel">
+          <!-- Status Header -->
+          <div class="results-header-status">
+            <h3 class="detections-count-title" id="detections-count-title">READY FOR INPUT</h3>
+            <div id="category-summary-badges" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+          </div>
+
+          <!-- Multi-Detection List -->
+          <div class="detections-items-list" id="detections-items-list">
+            <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13.5px;">
+              Take a photo or pick a sample on the left to identify items and view bin guidance.
+            </div>
+          </div>
+
+          <!-- 8-Point Guidance Card -->
+          <div class="guidance-box-card" id="scanner-guidance-card" style="display: none;">
+            <div class="guidance-header-title">
+              <span>📋</span>
+              <span>Responsible Citizen Guidance</span>
+            </div>
+
+            <!-- Primary Target Bin Callout -->
+            <div class="target-bin-banner blue" id="scanner-target-bin-banner">
+              <div class="target-bin-icon" id="scanner-bin-icon">🔵</div>
+              <div class="target-bin-details">
+                <div class="target-bin-title" id="scanner-bin-title">BLUE BIN — RECYCLABLES</div>
+                <div class="target-bin-sub" id="scanner-bin-sub">Clean dry packaging, containers, paper & metals</div>
+              </div>
+            </div>
+
+            <!-- Safety Alert -->
+            <div class="safety-alert-banner" id="scanner-safety-alert"></div>
+
+            <!-- 8-Point Details Grid -->
+            <div class="guide-eight-grid">
+              <div class="guide-point-cell">
+                <div class="point-label">1. What is it?</div>
+                <div class="point-content" id="guide-p-what">Detected Item</div>
+              </div>
+
+              <div class="guide-point-cell highlight">
+                <div class="point-label">2. What should I do now?</div>
+                <div class="point-content" id="guide-p-now">Immediate handling</div>
+              </div>
+
+              <div class="guide-point-cell">
+                <div class="point-label">3. Which bin should I use?</div>
+                <div class="point-content" id="guide-p-bin">Target bin stream</div>
+              </div>
+
+              <div class="guide-point-cell">
+                <div class="point-label">4. How should I prepare it?</div>
+                <div class="point-content" id="guide-p-prep">Preparation instructions</div>
+              </div>
+
+              <div class="guide-point-cell warning">
+                <div class="point-label">5. What should I avoid?</div>
+                <div class="point-content" id="guide-p-avoid">Mistakes to avoid</div>
+              </div>
+
+              <div class="guide-point-cell">
+                <div class="point-label">6. Where does it end up?</div>
+                <div class="point-content" id="guide-p-where">Collection route</div>
+              </div>
+
+              <div class="guide-point-cell">
+                <div class="point-label">7. Why does this matter?</div>
+                <div class="point-content" id="guide-p-why">Environmental rationale</div>
+              </div>
+
+              <div class="guide-point-cell highlight">
+                <div class="point-label">8. Good-citizen habit:</div>
+                <div class="point-content" id="guide-p-action">Community habit</div>
+              </div>
+            </div>
+
+            <!-- 1-Tap Household Confirmation Card -->
+            <div class="confirmation-card" id="scanner-confirmation-form">
+              <h4 class="confirmation-card-title">Confirm & Log Household Action</h4>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                  <label class="form-label">Item Description</label>
+                  <input type="text" class="form-input" id="confirm-item-name" value="Plastic Beverage Bottle">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Confirmed Category</label>
+                  <select class="form-select" id="confirm-material-category">
+                    <option value="Recyclable materials">Recyclable materials</option>
+                    <option value="Organic and biodegradable waste">Organic and biodegradable waste</option>
+                    <option value="Municipal solid waste">Municipal solid waste</option>
+                    <option value="Hazardous waste">Hazardous waste</option>
+                    <option value="Electronic waste">Electronic waste</option>
+                    <option value="Liquid waste">Liquid waste</option>
+                    <option value="Construction and demolition waste">Construction and demolition waste</option>
+                    <option value="Biomedical and healthcare waste">Biomedical and healthcare waste</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                  <label class="form-label">Disposal Action Taken</label>
+                  <select class="form-select" id="confirm-disposal-action">
+                    <option value="Placed in Recycling Bin">Placed in Recycling Bin (Clean)</option>
+                    <option value="Composted at Home / Wet Bin">Composted at Home / Wet Bin</option>
+                    <option value="Kept for E-Waste Drop-off">Kept for E-Waste Drop-off</option>
+                    <option value="Saved for Hazardous Depot">Saved for Hazardous Depot</option>
+                    <option value="Disposed in General Trash">Disposed in General Household Trash</option>
+                    <option value="Cleaned & Reused at Home">Cleaned & Reused at Home</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Estimated Weight (kg)</label>
+                  <input type="number" step="0.01" class="form-input" id="confirm-weight-kg" value="0.05">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Household Notes (Optional)</label>
+                <input type="text" class="form-input" id="confirm-notes" placeholder="e.g., Rinsed cap removed, placed in blue bin">
+              </div>
+
+              <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-primary" id="btn-submit-confirmed-batch" style="flex: 1;">
+                  ✔ Confirm & Log to My Impact
+                </button>
+                <button class="btn-secondary" id="btn-ask-ai-item">
+                  💬 Ask AI Advisor
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manual Quick-Pick Bar (Honest Fallback) -->
+          <div class="manual-categories-strip">
+            <div class="manual-strip-label">Manual Category Quick-Pick (If item is unfamiliar):</div>
+            <div class="manual-buttons-grid">
+              <button class="btn-manual-cat" data-cat="Recyclable materials">♻️ Recyclables</button>
+              <button class="btn-manual-cat" data-cat="Organic and biodegradable waste">🌱 Organics</button>
+              <button class="btn-manual-cat" data-cat="Municipal solid waste">🗑️ General Trash</button>
+              <button class="btn-manual-cat" data-cat="Hazardous waste">⚠️ Hazardous</button>
+              <button class="btn-manual-cat" data-cat="Electronic waste">⚡ E-Waste</button>
+              <button class="btn-manual-cat" data-cat="Liquid waste">🛢️ Liquid Waste</button>
+              <button class="btn-manual-cat" data-cat="Construction and demolition waste">🧱 C&D Waste</button>
+              <button class="btn-manual-cat" data-cat="Biomedical and healthcare waste">🩹 Biomedical</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 3: RESPONSIBLE CITIZEN WASTE GUIDE
+         ==================================================================== -->
+    <section class="platform-view" id="view-guide">
+      <div class="view-header">
+        <div>
+          <h1 class="view-headline">Responsible Citizen Waste Guide</h1>
+          <p class="view-subline">Search household items, find the exact bin color, understand how to clean and prepare waste, dangerous mistakes to avoid, and community recycling habits.</p>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted); font-weight: 700;" id="guide-results-count">
+          Showing all items
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="guide-search-panel">
+        <input type="text" class="guide-search-input" id="guide-search-input" placeholder="Search item (e.g. bottle, battery, cooking oil, pizza box, phone)...">
+        <input type="text" class="guide-locality-input" id="guide-locality-input" placeholder="Locality (optional, e.g. Metro)">
+      </div>
+
+      <!-- Filter Pills -->
+      <div class="guide-filter-pills-row" id="guide-filter-pills"></div>
+
+      <!-- 8 Official Categories Grid Overview -->
+      <div class="section-headline-group">
+        <h3 class="section-title">The 8 Official Household Waste Categories</h3>
+        <p class="section-sub">Click any category card to filter items.</p>
+      </div>
+      <div class="guide-categories-grid" id="guide-categories-grid"></div>
+
+      <!-- Searchable Items Grid -->
+      <div class="section-headline-group">
+        <h3 class="section-title">Household Items Directory</h3>
+        <p class="section-sub">Expand any item to inspect the complete 8-point citizen guidance.</p>
+      </div>
+      <div class="guide-items-grid" id="guide-items-grid"></div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 4: DIGITAL TWIN & SCENARIO SIMULATOR
+         ==================================================================== -->
+    <section class="platform-view" id="view-twin">
+      <div class="view-header">
+        <div>
+          <h1 class="view-headline">Circular Waste Digital Twin</h1>
+          <p class="view-subline">Interactive operational model tracing the material journey: Household Generation → Collection Routes → Optical Sorting Hub → Secondary Refiners.</p>
+        </div>
+        <div class="stage-toolbar-controls">
+          <button class="btn-secondary" id="btn-sim-step">Step Sim</button>
+          <button class="btn-secondary" id="btn-sim-auto">Auto-Run</button>
+          <button class="btn-danger" id="btn-sim-reset">Reset</button>
+        </div>
+      </div>
+
+      <!-- 4-Stage Journey Strip -->
+      <div class="twin-journey-strip">
+        <div class="journey-step-box">
+          <span class="journey-step-icon">🏡</span>
+          <div>
+            <div class="journey-step-name">1. Household Source</div>
+            <div class="journey-step-desc">Citizen sorting & cleaning</div>
+          </div>
+        </div>
+        <div class="journey-step-box">
+          <span class="journey-step-icon">🚛</span>
+          <div>
+            <div class="journey-step-name">2. Collection Route</div>
+            <div class="journey-step-desc">4 Municipal depot zones</div>
+          </div>
+        </div>
+        <div class="journey-step-box">
+          <span class="journey-step-icon">⚙️</span>
+          <div>
+            <div class="journey-step-name">3. Sorting Facility</div>
+            <div class="journey-step-desc">High-speed optical MRF-01</div>
+          </div>
+        </div>
+        <div class="journey-step-box">
+          <span class="journey-step-icon">🔄</span>
+          <div>
+            <div class="journey-step-name">4. Secondary Life</div>
+            <div class="journey-step-desc">4 Specialized refiners</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="twin-layout">
+        <!-- Interactive Canvas Card -->
+        <div class="twin-canvas-card">
+          <div class="twin-toolbar">
+            <span>NETWORK TOPOLOGY // CLICK NODES TO INSPECT</span>
+            <span style="color: var(--brand-accent);">FLOW PARTICLES: ACTIVE SECONDARY MATERIAL</span>
+          </div>
+          <canvas id="twin-topology-canvas"></canvas>
+        </div>
+
+        <!-- Sidebar: Scenario Simulator & Node Inspector -->
+        <div class="twin-sidebar-card">
+          <!-- Interactive Scenario Simulator -->
+          <div class="scenario-sim-card">
+            <div class="sim-card-header">
+              <h3 style="font-size: 16px; font-weight: 800;">Scenario Simulator</h3>
+              <span class="sim-tag-badge">[SIMULATION]</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+              Simulate what happens when household sorting increases or collection routes experience surge volume. Calculations do not alter live database records.
+            </p>
+
+            <!-- Sliders -->
+            <div class="sim-sliders-grid">
+              <div class="sim-slider-cell">
+                <div class="slider-label-row">
+                  <span>Daily Waste Volume</span>
+                  <span class="slider-val-readout" id="sim-val-volume">200 TPD</span>
+                </div>
+                <input type="range" id="sim-slider-volume" min="50" max="500" step="10" value="200" style="width: 100%;">
+              </div>
+
+              <div class="sim-slider-cell">
+                <div class="slider-label-row">
+                  <span>Source Segregation</span>
+                  <span class="slider-val-readout" id="sim-val-segregation">65%</span>
+                </div>
+                <input type="range" id="sim-slider-segregation" min="10" max="95" step="5" value="65" style="width: 100%;">
+              </div>
+
+              <div class="sim-slider-cell">
+                <div class="slider-label-row">
+                  <span>Collection Capacity</span>
+                  <span class="slider-val-readout" id="sim-val-collection">250 TPD</span>
+                </div>
+                <input type="range" id="sim-slider-collection" min="100" max="400" step="10" value="250" style="width: 100%;">
+              </div>
+
+              <div class="sim-slider-cell">
+                <div class="slider-label-row">
+                  <span>Processing Capacity</span>
+                  <span class="slider-val-readout" id="sim-val-processing">220 TPD</span>
+                </div>
+                <input type="range" id="sim-slider-processing" min="100" max="350" step="10" value="220" style="width: 100%;">
+              </div>
+            </div>
+
+            <!-- Presets -->
+            <div class="sim-presets-bar">
+              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">PRESETS:</span>
+              <button class="btn-sample-chip" id="preset-baseline">Baseline City (35% Segregation)</button>
+              <button class="btn-sample-chip" id="preset-high-segregation">EcoSync Adoption (85% Segregation)</button>
+              <button class="btn-sample-chip" id="preset-stress">High Volume Stress (380 TPD)</button>
+            </div>
+
+            <!-- Simulation Outputs -->
+            <div class="sim-results-grid">
+              <div class="sim-result-box">
+                <div class="sim-res-val" id="sim-res-diversion">0%</div>
+                <div class="sim-res-lbl">Landfill Diversion</div>
+              </div>
+
+              <div class="sim-result-box">
+                <div class="sim-res-val" id="sim-res-overflow">0%</div>
+                <div class="sim-res-lbl">Fleet Utilization</div>
+              </div>
+
+              <div class="sim-result-box">
+                <div class="sim-res-val" id="sim-res-co2">0 MT</div>
+                <div class="sim-res-lbl">Avoided CO₂e/Day</div>
+              </div>
+            </div>
+
+            <div class="sim-rec-box" id="sim-res-recommendation">
+              Adjust sliders above to evaluate collection and sorting bottlenecks.
+            </div>
+
+            <!-- Before / After Scenario Comparison Card -->
+            <div class="comparison-card" id="sim-comparison-card">
+              <div class="comparison-header">
+                <div class="comparison-title">
+                  <span>⚖️</span>
+                  <span>Before vs After Scenario Comparison</span>
+                </div>
+                <span class="comparison-badge" id="comparison-badge-status">DETERMINISTIC EVALUATION</span>
+              </div>
+
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th>Metric Indicator</th>
+                    <th>City Baseline (35%)</th>
+                    <th>Simulated Scenario</th>
+                    <th>Net Delta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Landfill Diversion Rate</td>
+                    <td id="comp-base-diversion">31.5%</td>
+                    <td id="comp-scen-diversion">62.8%</td>
+                    <td class="delta-cell delta-positive" id="comp-delta-diversion">+31.3%</td>
+                  </tr>
+                  <tr>
+                    <td>Daily Landfilled Waste</td>
+                    <td id="comp-base-landfill">137.0 TPD</td>
+                    <td id="comp-scen-landfill">74.5 TPD</td>
+                    <td class="delta-cell delta-reduction" id="comp-delta-landfill">-62.5 TPD</td>
+                  </tr>
+                  <tr>
+                    <td>Avoided Daily CO₂e</td>
+                    <td id="comp-base-co2">78.8 MT</td>
+                    <td id="comp-scen-co2">156.9 MT</td>
+                    <td class="delta-cell delta-positive" id="comp-delta-co2">+78.1 MT/d</td>
+                  </tr>
+                  <tr>
+                    <td>Contamination Loss</td>
+                    <td id="comp-base-contam">17.5 TPD</td>
+                    <td id="comp-scen-contam">8.5 TPD</td>
+                    <td class="delta-cell delta-reduction" id="comp-delta-contam">-9.0 TPD</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="comparison-summary-text" id="comp-summary-text">
+                Compared to unoptimized baseline, this scenario diverts an extra 62.5 tons/day from landfill and cuts greenhouse emissions by 78.1 MT CO₂e daily.
+              </div>
+            </div>
+          </div>
+
+          <!-- Node Inspector -->
+          <div class="guidance-box-card" id="twin-node-inspector">
+            <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 4px;">Node Telemetry Inspector</h4>
+            <p style="font-size: 12px; color: var(--text-muted);">Click any facility or collection point on the network canvas to view real throughput and supported materials.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 5: MY IMPACT & ACTIVITY HISTORY
+         ==================================================================== -->
+    <section class="platform-view" id="view-impact">
+      <div class="view-header">
+        <div>
+          <h1 class="view-headline">My Household Impact</h1>
+          <p class="view-subline">Honest, transparent environmental metrics calculated directly from your confirmed scans and self-reported waste actions using EPA WARM v15 lifecycle coefficients.</p>
+        </div>
+      </div>
+
+      <!-- Headline Metric Cards -->
+      <div class="impact-hero-metrics">
+        <div class="impact-metric-box">
+          <div class="impact-metric-lbl">Total Scans</div>
+          <div class="impact-metric-val" id="impact-total-scans">0</div>
+          <div class="impact-metric-sub">Analyzed with YOLO11n</div>
+        </div>
+
+        <div class="impact-metric-box">
+          <div class="impact-metric-lbl">Items Confirmed</div>
+          <div class="impact-metric-val" id="impact-total-confirmed">0</div>
+          <div class="impact-metric-sub">Citizen categorized</div>
+        </div>
+
+        <div class="impact-metric-box">
+          <div class="impact-metric-lbl">Diverted Landfill</div>
+          <div class="impact-metric-val" id="impact-diverted-kg">0 kg</div>
+          <div class="impact-metric-sub">Standard unit weights</div>
+        </div>
+
+        <div class="impact-metric-box">
+          <div class="impact-metric-lbl">Avoided GHG Emissions</div>
+          <div class="impact-metric-val" id="impact-avoided-co2">0 kg CO₂e</div>
+          <div class="impact-metric-sub">EPA WARM v15 factors</div>
+        </div>
+
+        <div class="impact-metric-box">
+          <div class="impact-metric-lbl">Energy Conserved</div>
+          <div class="impact-metric-val" id="impact-energy-saved">0 kWh</div>
+          <div class="impact-metric-sub">Lifecycle offsets</div>
+        </div>
+      </div>
+
+      <!-- Relatable Household Equivalencies -->
+      <div class="equivalency-strip">
+        <div class="equiv-card">
+          <div class="equiv-icon">🚗</div>
+          <div>
+            <div class="equiv-val" id="impact-equiv-cars">0 km</div>
+            <div class="equiv-lbl">Equivalent car driving emissions avoided</div>
+          </div>
+        </div>
+
+        <div class="equiv-card">
+          <div class="equiv-icon">📱</div>
+          <div>
+            <div class="equiv-val" id="impact-equiv-phones">0 charges</div>
+            <div class="equiv-lbl">Equivalent smartphone full battery charges saved</div>
+          </div>
+        </div>
+
+        <div class="equiv-card">
+          <div class="equiv-icon">💡</div>
+          <div>
+            <div class="equiv-val" id="impact-equiv-bulbs">0 hours</div>
+            <div class="equiv-lbl">Equivalent 9W LED bulb illumination saved</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Breakdown Distributions -->
+      <div class="impact-charts-split">
+        <div class="impact-breakdown-card">
+          <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 14px;">Waste Composition by Category</h3>
+          <div id="impact-category-bars"></div>
+        </div>
+
+        <div class="impact-breakdown-card">
+          <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 14px;">Actions Distribution</h3>
+          <div id="impact-action-bars"></div>
+        </div>
+      </div>
+
+      <!-- Chronological Activity History Table -->
+      <div class="section-headline-group" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px;">
+        <div>
+          <h3 class="section-title">Chronological Activity History</h3>
+          <p class="section-sub">Verified records of household scans stored persistently in SQLite.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <a href="/api/history/export" class="btn-export-csv" id="btn-export-history-csv" download="ecosync_household_waste_impact_history.csv">
+            <span>📥</span>
+            <span>Export Verified CSV</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- History Filter Toolbar -->
+      <div class="history-toolbar">
+        <input type="text" class="history-search-input" id="history-search-input" placeholder="Search item name, notes, material...">
+        <select class="history-category-select" id="history-category-select">
+          <option value="">All Categories</option>
+          <option value="Recyclable materials">Recyclable materials</option>
+          <option value="Organic and biodegradable waste">Organic and biodegradable waste</option>
+          <option value="Municipal solid waste">Municipal solid waste</option>
+          <option value="Hazardous waste">Hazardous waste</option>
+          <option value="Electronic waste">Electronic waste</option>
+          <option value="Liquid waste">Liquid waste</option>
+          <option value="Construction and demolition waste">Construction and demolition waste</option>
+          <option value="Biomedical and healthcare waste">Biomedical and healthcare waste</option>
+        </select>
+        <select class="history-category-select" id="history-filter-demo">
+          <option value="">All Records (Demo + Real)</option>
+          <option value="0">Verified Real Scans Only</option>
+          <option value="1">Demonstration Seed Records Only</option>
+        </select>
+        <button class="btn-secondary-sm" id="btn-refresh-history">Refresh</button>
+      </div>
+
+      <div class="ecosync-table-wrapper">
+        <table class="ecosync-data-table">
+          <thead>
+            <tr>
+              <th>Scan ID</th>
+              <th>Item Name</th>
+              <th>Category</th>
+              <th>Action Taken</th>
+              <th>Weight</th>
+              <th>Record Type</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="impact-history-tbody">
+            <tr><td colspan="7" style="text-align:center; padding: 20px;">Loading history records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Methodology Disclosure -->
+      <div class="methodology-disclosure-card">
+        <div class="methodology-title">Documentation & Scientific Honesty Statement</div>
+        <p>
+          EcoSync strictly differentiates between <strong>Household Self-Reported Actions</strong> (items you confirmed and segregated into household bins based on standard item unit weights) and <strong>Municipal Facility Receipts</strong> (physical materials verified at industrial recovery centers).
+        </p>
+        <p style="margin-top: 6px;">
+          Emissions avoided and energy saved are calculated deterministically using documented EPA WARM v15 lifecycle factors (e.g., 1.45 kg CO₂e per kg of clean recycled plastic; 0.52 kg CO₂e per kg of composted food scraps). No metrics or predictions are fabricated.
+        </p>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 6: GENERATIVE AI ADVISOR
+         ==================================================================== -->
+    <section class="platform-view" id="view-advisor">
+      <div class="view-header">
+        <div>
+          <h1 class="view-headline">Generative AI Waste Advisor</h1>
+          <p class="view-subline">Ask questions about tricky packaging, battery safety, grease disposal, food composting, and zero-waste habits.</p>
+        </div>
+      </div>
+
+      <div class="advisor-layout">
+        <div class="advisor-console-card">
+          <div class="advisor-chat-log" id="advisor-chat-log">
+            <div class="advisor-message-bubble assistant">
+              <div class="advisor-source-tag">EcoSync Assistant Core</div>
+              <div>
+                Hello! I am your intelligent household waste advisor. You can ask me how to dispose of tricky items (like old batteries, greasy pizza boxes, or cooking oil), how to compost food scraps, or how to reduce household waste. How can I help today?
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); align-self: center;">SUGGESTIONS:</span>
+            <button class="btn-sample-chip advisor-chip-prompt">How do I dispose of old phone batteries?</button>
+            <button class="btn-sample-chip advisor-chip-prompt">Can greasy pizza boxes be recycled?</button>
+            <button class="btn-sample-chip advisor-chip-prompt">What can I do with used cooking oil?</button>
+            <button class="btn-sample-chip advisor-chip-prompt">How can our household reduce waste?</button>
+          </div>
+
+          <div class="advisor-input-bar">
+            <input type="text" class="advisor-input-field" id="advisor-query-input" placeholder="Ask any question about waste, recycling, or composting...">
+            <button class="btn-primary" id="btn-submit-advisor-query">Ask Advisor</button>
+          </div>
+        </div>
+
+        <div class="insights-feed-card">
+          <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Live Operational Insights</h3>
+          <div id="advisor-insights-feed" style="display: flex; flex-direction: column; gap: 10px; max-height: 480px; overflow-y: auto;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal Dialog: Batch Details -->
+  <div class="ecosync-modal-backdrop" id="batch-detail-modal" style="display: none;">
+    <div class="ecosync-modal-card">
+      <button class="modal-close-btn">&times;</button>
+      <div id="batch-detail-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Modal Dialog: 60-Second Judge Walkthrough -->
+  <div class="ecosync-modal-backdrop" id="walkthrough-modal" style="display: none;">
+    <div class="ecosync-modal-card">
+      <button class="modal-close-btn" id="btn-close-walkthrough">&times;</button>
+      <div class="walkthrough-modal-header">
+        <h2 class="walkthrough-modal-title">
+          <span>⏱️</span>
+          <span>EcoSync 60-Second Judge Walkthrough</span>
+        </h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+          Designed for DSU Code Clash 2.0 PS01. Follow these 5 steps to evaluate the full solution in 60 seconds:
+        </p>
+      </div>
+
+      <div class="walkthrough-step-list">
+        <div class="walkthrough-step-item" onclick="window.ecosyncApp.switchView('scanner'); document.getElementById('walkthrough-modal').style.display='none';">
+          <div class="walkthrough-step-num">1</div>
+          <div class="walkthrough-step-content">
+            <div class="walkthrough-step-title">Real AI Computer Vision Scanner</div>
+            <div class="walkthrough-step-desc">Test genuine multi-object YOLO11n inference on sample images or open your live webcam. See aligned bounding boxes and the 8-point citizen guidance.</div>
+            <div class="walkthrough-step-cta">Jump to Scanner &rarr;</div>
+          </div>
+        </div>
+
+        <div class="walkthrough-step-item" onclick="window.ecosyncApp.switchView('guide'); document.getElementById('walkthrough-modal').style.display='none';">
+          <div class="walkthrough-step-num">2</div>
+          <div class="walkthrough-step-content">
+            <div class="walkthrough-step-title">8-Category Responsible Citizen Waste Guide</div>
+            <div class="walkthrough-step-desc">Search all 8 official waste streams (Recyclables, Organics, MSW, Hazardous, E-Waste, Liquids, C&D, Biomedical) with safety warnings and clean preparation tips.</div>
+            <div class="walkthrough-step-cta">Explore Waste Guide &rarr;</div>
+          </div>
+        </div>
+
+        <div class="walkthrough-step-item" onclick="window.ecosyncApp.switchView('twin'); document.getElementById('walkthrough-modal').style.display='none';">
+          <div class="walkthrough-step-num">3</div>
+          <div class="walkthrough-step-content">
+            <div class="walkthrough-step-title">Circular Waste Digital Twin & Scenario Simulator</div>
+            <div class="walkthrough-step-desc">Move the Source Segregation slider to 85% or try the presets. Watch Before vs After scenario comparison, bottlenecks, and avoided emissions update instantly.</div>
+            <div class="walkthrough-step-cta">Open Digital Twin &rarr;</div>
+          </div>
+        </div>
+
+        <div class="walkthrough-step-item" onclick="window.ecosyncApp.switchView('impact'); document.getElementById('walkthrough-modal').style.display='none';">
+          <div class="walkthrough-step-num">4</div>
+          <div class="walkthrough-step-content">
+            <div class="walkthrough-step-title">Household Impact Dashboard & CSV Export</div>
+            <div class="walkthrough-step-desc">Review documented EPA WARM metrics derived from confirmed records, filter activity history, and download verified CSV reports.</div>
+            <div class="walkthrough-step-cta">View My Impact &rarr;</div>
+          </div>
+        </div>
+
+        <div class="walkthrough-step-item" onclick="window.ecosyncApp.switchView('advisor'); document.getElementById('walkthrough-modal').style.display='none';">
+          <div class="walkthrough-step-num">5</div>
+          <div class="walkthrough-step-content">
+            <div class="walkthrough-step-title">Grounded AI Waste Advisor</div>
+            <div class="walkthrough-step-desc">Click suggestions to ask tricky disposal and safety questions (batteries, grease, pizza boxes) with offline fallback.</div>
+            <div class="walkthrough-step-cta">Chat with Advisor &rarr;</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="btn-primary" onclick="document.getElementById('walkthrough-modal').style.display='none';">Got it, Let's Explore!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="ecosync-toast-container"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="/static/js/waste_guide.js"></script>
+  <script src="/static/js/scanner.js"></script>
+  <script src="/static/js/digital_twin.js"></script>
+  <script src="/static/js/impact.js"></script>
+  <script src="/static/js/advisor.js"></script>
+  <script src="/static/js/main.js"></script>
+
+</body>
+</html>
