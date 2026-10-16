@@ -12,10 +12,10 @@ class Config:
     DEBUG = os.environ.get("FLASK_DEBUG", "0") == "1"
     
     # Database
-    DATABASE_PATH = BASE_DIR / "database" / "ecosync.db"
+    DATABASE_PATH = Path(os.environ.get("ECOSYNC_DATABASE_PATH", BASE_DIR / "database" / "ecosync.db"))
     
     # Uploads
-    UPLOAD_FOLDER = BASE_DIR / "uploads"
+    UPLOAD_FOLDER = Path(os.environ.get("ECOSYNC_UPLOAD_FOLDER", BASE_DIR / "uploads"))
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB limit
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
     

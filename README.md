@@ -234,7 +234,17 @@ Open your web browser and navigate to:
 ```bash
 pytest
 ```
-All **22 automated tests** will execute and validate the Computer Vision inference, Demo Mode API, CSV Export, Waste Guide categories, Scenario Simulator, Database persistence, and Analytics calculations.
+All **24 automated tests** will execute and validate the Computer Vision inference, Demo Mode API, CSV Export, Waste Guide categories, Scenario Simulator, Database persistence, and Analytics calculations.
+
+## ☁️ Deploy on Render
+
+This project is a Flask application, so GitHub Pages cannot run its backend or render its templates. To deploy it on Render:
+
+1. Push the repository, including `render.yaml`, to GitHub.
+2. In Render, choose **New + → Blueprint** and connect this GitHub repository.
+3. Review the Blueprint and create the `ecosync` service. Add `GEMINI_API_KEY` if you want cloud-powered AI responses; it can be left unset to use the offline advisor.
+
+The Blueprint uses Gunicorn, checks `/api/health`, and mounts a persistent disk for the SQLite database and uploaded images. The persistent disk requires a paid Render web service.
 
 ---
 
@@ -260,4 +270,3 @@ All **22 automated tests** will execute and validate the Computer Vision inferen
 ---
 
 *EcoSync — Enterprise Circular Economy Platform | Built with PyTorch, Ultralytics YOLO, Flask, SQLite, and Google Gemini API.*
-
