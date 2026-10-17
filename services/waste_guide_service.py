@@ -515,6 +515,20 @@ ITEM_GUIDES = {
 # 3. Model Class to Household Item Resolution Matrix
 # Maps standard YOLO detection classes to our verified household items
 MODEL_CLASS_MAP = {
+    "person": {
+        "item_id": "human_operator",
+        "object_identity": "Citizen (Human Operator — Non-Waste)",
+        "default_category": "Citizen / Non-Waste",
+        "candidate_material": "Responsible Citizen (Live User)",
+        "confidence_weight": 0.99
+    },
+    "leafy_vegetables": {
+        "item_id": "food_scraps_peels",
+        "object_identity": "Leafy Greens & Fresh Vegetables (Wet Waste)",
+        "default_category": "Organic and biodegradable waste",
+        "candidate_material": "High-Moisture Plant Biomass & Cellulose",
+        "confidence_weight": 0.95
+    },
     "bottle": {
         "item_id": "plastic_bottle",
         "object_identity": "Plastic Beverage Bottle",
@@ -708,7 +722,20 @@ MODEL_CLASS_MAP = {
 
 
 def get_category_info(category_name: str) -> Dict[str, Any]:
-    """Returns metadata for an official waste category."""
+    """Returns metadata for an official waste category or citizen operator."""
+    if category_name == "Citizen / Non-Waste":
+        return {
+            "id": "citizen",
+            "name": "Citizen / Non-Waste",
+            "short_desc": "Live citizen operator presenting waste stream to the intelligent scanning engine.",
+            "bin_color": "Cyan",
+            "bin_label": "Citizen Operator (Do Not Discard)",
+            "badge_class": "badge-cyan",
+            "icon": "👤",
+            "standard_weight_factor_kg": 0.0,
+            "diverted_co2_factor_per_kg": 0.0,
+            "energy_saved_kwh_per_kg": 0.0
+        }
     return WASTE_CATEGORIES.get(category_name, {
         "id": "unknown",
         "name": category_name,

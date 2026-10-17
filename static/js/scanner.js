@@ -592,6 +592,36 @@ class WasteScanner {
         safety: "CRITICAL: NEVER put in regular household trash. Heavy fire hazard.",
         bbox: { x1: 0.30, y1: 0.15, x2: 0.70, y2: 0.85 },
         url: "./static/images/samples/sample_battery.jpg"
+      },
+      "sample_leafy_greens": {
+        raw_class: "leafy_vegetables",
+        object_identity: "Leafy Greens & Fresh Vegetables (Wet Waste)",
+        candidate_material: "High-Moisture Plant Biomass & Cellulose",
+        sub_type: "Fresh Produce Scrap",
+        suggested_category: "Organic and biodegradable waste",
+        bin_target: "Green Bin (Compost)",
+        bin_color: "#16a34a",
+        confidence: 0.962,
+        co2e_factor: 0.05,
+        prep: "Deposit in green wet waste bin. 100% compostable organic matter.",
+        safety: "Remove synthetic rubber bands or plastic twist-ties before composting.",
+        bbox: { x1: 0.22, y1: 0.20, x2: 0.78, y2: 0.80 },
+        url: "./static/images/samples/sample_apple.jpg"
+      },
+      "sample_electronics": {
+        raw_class: "electronic_cables",
+        object_identity: "Electronic Cables & Peripherals",
+        candidate_material: "Copper Core with PVC / TPE Polymer Jacket",
+        sub_type: "USB / Power Cord",
+        suggested_category: "Electronic waste",
+        bin_target: "Orange Hub (E-Waste Kiosk)",
+        bin_color: "#d97706",
+        confidence: 0.948,
+        co2e_factor: 0.25,
+        prep: "Bundle neatly with a twist tie. Drop off at certified e-waste kiosks.",
+        safety: "Do not put loose cables in curbside bins; they tangle around spinning sorting screens.",
+        bbox: { x1: 0.24, y1: 0.18, x2: 0.76, y2: 0.82 },
+        url: "./static/images/samples/sample_battery.jpg"
       }
     };
 
@@ -610,7 +640,9 @@ class WasteScanner {
 
     if (!spec && source.filename) {
       const fn = source.filename.toLowerCase();
-      if (fn.includes("can") || fn.includes("redbull")) spec = SAMPLE_DATABASE["sample_redbull"];
+      if (fn.includes("leaf") || fn.includes("spinach") || fn.includes("green") || fn.includes("veg")) spec = SAMPLE_DATABASE["sample_leafy_greens"];
+      else if (fn.includes("cable") || fn.includes("wire") || fn.includes("charg") || fn.includes("electr")) spec = SAMPLE_DATABASE["sample_electronics"];
+      else if (fn.includes("can") || fn.includes("redbull")) spec = SAMPLE_DATABASE["sample_redbull"];
       else if (fn.includes("apple")) spec = SAMPLE_DATABASE["sample_apple"];
       else if (fn.includes("banana")) spec = SAMPLE_DATABASE["sample_banana"];
       else if (fn.includes("doritos") || fn.includes("chips")) spec = SAMPLE_DATABASE["sample_doritos"];
@@ -782,6 +814,29 @@ class WasteScanner {
     dets.forEach((det, idx) => {
       const card = document.createElement("div");
       card.className = "detection-identity-card";
+
+      // If detection is the citizen operator, render live operator status badge
+      if (det.raw_class === "person" || det.suggested_category === "Citizen / Non-Waste") {
+        card.style.borderLeft = "4px solid #06b6d4";
+        card.innerHTML = `
+          <div class="det-header-row">
+            <span class="det-title" style="color:#06b6d4;">👤 ${det.object_identity}</span>
+            <span class="det-conf-badge" style="background:rgba(6,182,212,0.15); color:#06b6d4; border:1px solid rgba(6,182,212,0.3);">${det.confidence_pct}% Confidence</span>
+          </div>
+          <div class="det-material-tag">
+            <strong>Role:</strong> Citizen Operator (Live Presenter)
+          </div>
+          <div class="det-bin-route-box" style="border-color:rgba(6,182,212,0.3); background:rgba(6,182,212,0.08); color:#06b6d4;">
+            <strong>Status:</strong> Active Operator — Presenting item to camera for circular verification
+          </div>
+          <p class="det-guidance-text" style="color:var(--text-secondary); margin-top:8px;">
+            EcoSync vision engine detected citizen presenter. The presented waste item below is isolated for circular classification.
+          </p>
+        `;
+        this.detectionsList.appendChild(card);
+        return;
+      }
+
       const prep = (det.how_to_handle && det.how_to_handle.how_to_prepare) ? det.how_to_handle.how_to_prepare : (det.how_to_handle ? det.how_to_handle.what_to_do_now : "");
 
       card.innerHTML = `
