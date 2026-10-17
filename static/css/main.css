@@ -2115,25 +2115,3 @@ button:active, .btn-hero-primary:active, .btn-hero-outline:active, .welcome-mode
   0%, 65% { left: -100%; }
   100% { left: 220%; }
 }
-
-/* ==========================================================================
-   SCANNER CAMERA LIVE VIEWFINDER & LASER SWEEP ANIMATION
-   ========================================================================== */
-.scanner-laser-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--brand-neon) 50%, transparent);
-  box-shadow: 0 0 14px var(--brand-neon);
-  pointer-events: none;
-  animation: laserSweep 2.2s infinite ease-in-out;
-  z-index: 8;
-}
-
-@keyframes laserSweep {
-  0% { top: 12%; opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { top: 88%; opacity: 0; }
-}

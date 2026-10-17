@@ -130,12 +130,6 @@ def confirm_classification():
     if not confirmed_category:
         return jsonify({"status": "error", "message": "confirmed_category is required."}), 400
 
-    if confirmed_category.lower() in ("uncategorized", "non-waste", "person") or "person" in item_name.lower():
-        return jsonify({
-            "status": "error",
-            "message": "Human presence (Person) is categorized as Uncategorized. Non-waste entities cannot be logged into the waste ledger."
-        }), 400
-
     new_batch_id = f"BATCH-{uuid.uuid4().hex[:6].upper()}"
     household_scan_id = f"HS-{uuid.uuid4().hex[:8].upper()}"
 

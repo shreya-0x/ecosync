@@ -236,15 +236,89 @@ pytest
 ```
 All **24 automated tests** will execute and validate the Computer Vision inference, Demo Mode API, CSV Export, Waste Guide categories, Scenario Simulator, Database persistence, and Analytics calculations.
 
-## ☁️ Deploy on Render
+## 🚀 Deployment Guide
 
-This project is a Flask application, so GitHub Pages cannot run its backend or render its templates. To deploy it on Render:
+EcoSync supports **Dual-Engine Deployment**:
+1. **GitHub Pages (Free Instant Static Hosting)**: Serves the full interactive platform directly from your GitHub repository using client-side computer vision, real-time digital twin scenarios, interactive telemetry, and local storage ledger.
+2. **Full-Stack Local / Cloud Server (Flask + PyTorch YOLO + SQLite)**: Runs live Python server inference with persistent SQLite database storage.
 
-1. Push the repository, including `render.yaml`, to GitHub.
-2. In Render, choose **New + → Blueprint** and connect this GitHub repository.
-3. Review the Blueprint and create the `ecosync` service. Add `GEMINI_API_KEY` if you want cloud-powered AI responses; it can be left unset to use the offline advisor.
+---
 
-The Blueprint uses Gunicorn, checks `/api/health`, and mounts a persistent disk for the SQLite database and uploaded images. The persistent disk requires a paid Render web service.
+### 🌐 Option 1: Host on GitHub Pages (Instant 1-Click Web Deployment)
+
+> **Why previous GitHub Pages deployments failed (White screen with unstyled text):**  
+> 1. **Asset Path Resolution**: Traditional web templates use root-relative paths like `/static/css/main.css`. When deployed to GitHub Pages at `https://<username>.github.io/<repository-name>/`, the browser requested `https://<username>.github.io/static/css/main.css`, omitting the repository subfolder. This caused HTTP 404 errors on all stylesheets, resulting in an unstyled white screen with raw text!  
+> 2. **Root Entrypoint**: GitHub Pages requires an `index.html` at the repository root `/`, whereas Flask applications keep templates inside `templates/index.html`.  
+> 3. **Jekyll Asset Filtering**: GitHub Pages runs Jekyll by default, which can filter out directories starting with underscores or specific extensions unless an empty `.nojekyll` file is present.  
+>  
+> **How EcoSync Solves This:**  
+> • All stylesheet and script references use `./static/...` relative paths that resolve seamlessly at any domain, custom path, or repository subfolder.  
+> • A production-ready root `index.html` and `.nojekyll` configuration file are pre-configured in the repository root.  
+> • Frontend modules contain a **Client-Side Simulation Engine**: When hosted statically without Python, image analysis, bounding boxes, scenario simulations, and activity history run smoothly in the browser with `localStorage` persistence!
+
+#### Step-by-Step GitHub Pages Setup:
+
+```bash
+# 1. Initialize Git in the project root
+git init
+
+# 2. Add all files
+git add .
+
+# 3. Commit the repository
+git commit -m "feat: EcoSync v2.0 - Complete Circular Intelligence Platform & Dual-Engine"
+
+# 4. Set main branch
+git branch -M main
+
+# 5. Connect your GitHub repository (replace with your repository URL)
+git remote add origin https://github.com/<YOUR-USERNAME>/<YOUR-REPO-NAME>.git
+
+# 6. Push to GitHub
+git push -u origin main
+```
+
+#### Activate GitHub Pages in GitHub:
+1. Open your repository on **GitHub.com**.
+2. Click **Settings** (top navigation bar).
+3. In the left sidebar, click **Pages** (under the "Code and automation" section).
+4. Under **Build and deployment**:
+   - **Source**: Select `Deploy from a branch`
+   - **Branch**: Select `main` and folder `/(root)`
+   - Click **Save**.
+5. Wait ~60 seconds. Refresh the page to see your live URL:  
+   👉 **`https://<YOUR-USERNAME>.github.io/<YOUR-REPO-NAME>/`**
+
+---
+
+### 💻 Option 2: Run Locally (Full-Stack Python + YOLO + SQLite)
+
+```bash
+# 1. Clone repository
+git clone https://github.com/<YOUR-USERNAME>/<YOUR-REPO-NAME>.git
+cd <YOUR-REPO-NAME>
+
+# 2. Create virtual environment
+python -m venv venv
+.\venv\Scripts\activate   # Windows PowerShell
+# source venv/bin/activate  # macOS / Linux
+
+# 3. Install Python dependencies
+pip install -r requirements.txt
+
+# 4. Start local Flask server
+python app.py
+```
+Open **`http://127.0.0.1:5000`** in your browser.
+
+---
+
+### ☁️ Option 3: Deploy Full-Stack Backend on Render / Cloud
+
+To run the Python Flask backend with live SQLite persistence in the cloud:
+1. Push the repository (including `render.yaml`) to GitHub.
+2. In [Render.com](https://render.com), click **New + → Blueprint** and select your GitHub repository.
+3. Review settings and deploy. Add `GEMINI_API_KEY` in environment variables if desired.
 
 ---
 

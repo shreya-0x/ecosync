@@ -219,15 +219,39 @@ class WasteGuide {
     });
   }
 
-  renderAdvisorCards() {
+  fetchItems(query = "") {
+    if (query && typeof query === "string" && query.trim()) {
+      const q = query.toLowerCase().trim();
+      const matched = ADVISOR_17_CLASSES.filter(c => 
+        c.title.toLowerCase().includes(q) || 
+        c.stream.toLowerCase().includes(q) || 
+        c.bin.toLowerCase().includes(q) || 
+        (c.tags && c.tags.some(t => t.toLowerCase().includes(q)))
+      );
+      this.renderAdvisorCards(matched);
+    } else {
+      this.renderAdvisorCards();
+    }
+  }
+
+  renderAdvisorCards(itemsList = null) {
     if (!this.cardsContainer) return;
     this.cardsContainer.innerHTML = "";
 
-    const filtered = this.currentFilter === "all"
+    const items = itemsList || (this.currentFilter === "all"
       ? ADVISOR_17_CLASSES
-      : ADVISOR_17_CLASSES.filter(c => c.tags.includes(this.currentFilter));
+      : ADVISOR_17_CLASSES.filter(c => c.tags.includes(this.currentFilter)));
 
-    filtered.forEach(item => {
+    if (!items.length) {
+      this.cardsContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+          No waste classes match your current search filter.
+        </div>
+      `;
+      return;
+    }
+
+    items.forEach(item => {
       const card = document.createElement("div");
       card.className = "advisor-class-card";
       card.innerHTML = `
