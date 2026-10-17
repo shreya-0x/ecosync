@@ -175,21 +175,32 @@ class EcoSyncApp {
         try {
           btnResetDemo.disabled = true;
           btnResetDemo.textContent = "Resetting...";
-          const resp = await fetch("/api/demo/reset", { method: "POST" });
-          const res = await resp.json();
-          if (res.status === "success") {
-            this.fetchHomeLiveStats();
-            if (window.householdImpact) {
-              window.householdImpact.fetchImpactMetrics();
-              window.householdImpact.fetchHistory();
+          try {
+            const resp = await fetch("/api/demo/reset", { method: "POST" });
+            if (resp.ok) {
+              await resp.json();
             }
-            if (window.digitalTwin) {
-              window.digitalTwin.fetchBins();
-              window.digitalTwin.fetchRoutes();
-            }
-            if (window.showEcoSyncToast) {
-              window.showEcoSyncToast("Demo dataset successfully restored to pristine baseline!");
-            }
+          } catch (netErr) {
+            // Running on static hosting or offline; client-side reset will execute below
+          }
+
+          // Clear client persistence to restore clean baseline on GitHub Pages & local
+          localStorage.removeItem("ecosync_smart_bins");
+          localStorage.removeItem("ecosync_dispatched_routes");
+          localStorage.removeItem("ecosync_local_history");
+          localStorage.removeItem("ecosync_offline_records");
+
+          this.fetchHomeLiveStats();
+          if (window.householdImpact) {
+            window.householdImpact.fetchImpactMetrics();
+            window.householdImpact.fetchHistory();
+          }
+          if (window.digitalTwin) {
+            window.digitalTwin.fetchBins();
+            window.digitalTwin.fetchRoutes();
+          }
+          if (window.showEcoSyncToast) {
+            window.showEcoSyncToast("✓ Demo dataset successfully restored to pristine baseline!");
           }
         } catch (err) {
           console.error("Error resetting demo data:", err);
