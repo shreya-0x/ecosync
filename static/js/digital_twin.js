@@ -6,11 +6,45 @@
 class DigitalTwin {
   constructor() {
     this.currentBinCode = "BIN-05";
-    this.binsData = [];
+    this.binsData = this.getDefaultBins();
+    const saved = localStorage.getItem("ecosync_smart_bins");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.binsData = parsed;
+        }
+      } catch (e) {}
+    }
     this.init();
   }
 
+  getDefaultBins() {
+    return [
+      { code: "BIN-01", name: "Main Library Entrance", location: "Main Library Entrance", stream: "Clean Recyclables", stream_type: "Recyclables", capacity_l: 240, current_fill_pct: 42, battery_pct: 95, last_serviced: "2 hours ago", status: "Operational" },
+      { code: "BIN-02", name: "Dining Hall Organics Hub", location: "Dining Hall Exterior", stream: "Organic & Food Compost", stream_type: "Wet Compost", capacity_l: 360, current_fill_pct: 88, battery_pct: 82, last_serviced: "4 hours ago", status: "Warning" },
+      { code: "BIN-03", name: "Engineering Quad A", location: "Engineering Quad A", stream: "Dry Recyclables & Paper", stream_type: "Dry Recyclables", capacity_l: 240, current_fill_pct: 35, battery_pct: 98, last_serviced: "1 hour ago", status: "Operational" },
+      { code: "BIN-04", name: "Sports Arena Station", location: "Sports Complex", stream: "Beverage Bottles & Cans", stream_type: "Dry Waste", capacity_l: 360, current_fill_pct: 74, battery_pct: 89, last_serviced: "3 hours ago", status: "Operational" },
+      { code: "BIN-05", name: "Administration Annex Central", location: "Administration Annex", stream: "General Mixed Trash", stream_type: "General Trash", capacity_l: 400, current_fill_pct: 96, battery_pct: 76, last_serviced: "6 hours ago", status: "Critical Alert" },
+      { code: "BIN-06", name: "Science Laboratories Hub", location: "Science Laboratory B", stream: "Hazardous / Batteries & E-Waste", stream_type: "Hazardous / E-Waste", capacity_l: 120, current_fill_pct: 55, battery_pct: 91, last_serviced: "2 hours ago", status: "Operational" },
+      { code: "BIN-07", name: "Hostel Block North", location: "Hostel Block North", stream: "Wet Food Scrap Compost", stream_type: "Wet Compost", capacity_l: 240, current_fill_pct: 68, battery_pct: 87, last_serviced: "3 hours ago", status: "Operational" },
+      { code: "BIN-08", name: "East Gate Commercial Point", location: "East Gate Plaza", stream: "Dry Recyclables & Packaging", stream_type: "Recyclables", capacity_l: 240, current_fill_pct: 48, battery_pct: 94, last_serviced: "5 hours ago", status: "Operational" }
+    ];
+  }
+
   init() {
+    this.renderSmartBinsTable();
+    this.updateRadarNodes();
+    this.selectBin(this.currentBinCode);
+
+    const btnService = document.getElementById("btn-service-bin");
+    if (btnService) {
+      btnService.onclick = (e) => {
+        e.preventDefault();
+        this.serviceCurrentBin();
+      };
+    }
+
     this.fetchBins();
     this.fetchRoutes();
     this.initScenarioSliders();
@@ -21,8 +55,19 @@ class DigitalTwin {
       const resp = await fetch("/api/bins");
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      if (data.status === "success" && data.bins) {
-        this.binsData = data.bins;
+      if (data.status === "success" && Array.isArray(data.bins) && data.bins.length > 0) {
+        // Sync with any local servicing overrides
+        const localBins = JSON.parse(localStorage.getItem("ecosync_smart_bins") || "[]");
+        const localOverrides = {};
+        localBins.forEach(lb => { localOverrides[lb.code] = lb; });
+
+        this.binsData = data.bins.map(b => {
+          if (localOverrides[b.code] && localOverrides[b.code].current_fill_pct === 0) {
+            return { ...b, ...localOverrides[b.code] };
+          }
+          return b;
+        });
+
         this.renderSmartBinsTable();
         this.updateRadarNodes();
         this.selectBin(this.currentBinCode);
@@ -30,27 +75,7 @@ class DigitalTwin {
       }
       throw new Error("No bin data returned");
     } catch (err) {
-      console.warn("Using local smart bins telemetry:", err);
-      const saved = localStorage.getItem("ecosync_smart_bins");
-      if (saved) {
-        try {
-          this.binsData = JSON.parse(saved);
-        } catch (e) {
-          this.binsData = null;
-        }
-      }
-      if (!this.binsData || !this.binsData.length) {
-        this.binsData = [
-          { code: "BIN-01", name: "Main Library Entrance", location: "Main Library Entrance", stream: "Clean Recyclables", stream_type: "Recyclables", capacity_l: 240, current_fill_pct: 42, battery_pct: 95, last_serviced: "2 hours ago", status: "Operational" },
-          { code: "BIN-02", name: "Dining Hall Organics Hub", location: "Dining Hall Exterior", stream: "Organic & Food Compost", stream_type: "Wet Compost", capacity_l: 360, current_fill_pct: 88, battery_pct: 82, last_serviced: "4 hours ago", status: "Warning" },
-          { code: "BIN-03", name: "Engineering Quad A", location: "Engineering Quad A", stream: "Dry Recyclables & Paper", stream_type: "Dry Recyclables", capacity_l: 240, current_fill_pct: 35, battery_pct: 98, last_serviced: "1 hour ago", status: "Operational" },
-          { code: "BIN-04", name: "Sports Arena Station", location: "Sports Complex", stream: "Beverage Bottles & Cans", stream_type: "Dry Waste", capacity_l: 360, current_fill_pct: 74, battery_pct: 89, last_serviced: "3 hours ago", status: "Operational" },
-          { code: "BIN-05", name: "Administration Annex Central", location: "Administration Annex", stream: "General Mixed Trash", stream_type: "General Trash", capacity_l: 400, current_fill_pct: 96, battery_pct: 76, last_serviced: "6 hours ago", status: "Critical Alert" },
-          { code: "BIN-06", name: "Science Laboratories Hub", location: "Science Laboratory B", stream: "Hazardous / Batteries & E-Waste", stream_type: "Hazardous / E-Waste", capacity_l: 120, current_fill_pct: 55, battery_pct: 91, last_serviced: "2 hours ago", status: "Operational" },
-          { code: "BIN-07", name: "Hostel Block North", location: "Hostel Block North", stream: "Wet Food Scrap Compost", stream_type: "Wet Compost", capacity_l: 240, current_fill_pct: 68, battery_pct: 87, last_serviced: "3 hours ago", status: "Operational" },
-          { code: "BIN-08", name: "East Gate Commercial Point", location: "East Gate Plaza", stream: "Dry Recyclables & Packaging", stream_type: "Recyclables", capacity_l: 240, current_fill_pct: 48, battery_pct: 94, last_serviced: "5 hours ago", status: "Operational" }
-        ];
-      }
+      // Offline / GitHub Pages fallback is already active from constructor
       this.renderSmartBinsTable();
       this.updateRadarNodes();
       this.selectBin(this.currentBinCode);
@@ -191,29 +216,19 @@ class DigitalTwin {
   }
 
   async serviceCurrentBin() {
-    if (!this.currentBinCode) return;
-    const btn = document.getElementById("btn-service-bin");
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = `Emptying ${this.currentBinCode}...`;
+    const code = this.currentBinCode || "BIN-05";
+    if (!this.binsData || !this.binsData.length) {
+      this.binsData = this.getDefaultBins();
+    }
+    let bin = this.binsData.find(b => b.code === code);
+    if (!bin) {
+      bin = this.binsData.find(b => b.code === "BIN-05") || this.binsData[0];
+      if (bin) this.currentBinCode = bin.code;
     }
 
-    const bin = this.binsData.find(b => b.code === this.currentBinCode);
     const prevFill = bin ? bin.current_fill_pct : 96;
 
-    try {
-      const resp = await fetch(`/api/bins/${this.currentBinCode}/service`, { method: "POST" });
-      const data = await resp.json();
-      if (data.status === "success") {
-        await this.fetchBins();
-      } else {
-        throw new Error(data.message || "Server error");
-      }
-    } catch (err) {
-      console.warn("Updating smart bin telemetry locally:", err);
-    }
-
-    // Always empty the bin in state & localStorage
+    // 1. Immediately update local state & persistence synchronously
     if (bin) {
       bin.current_fill_pct = 0;
       bin.status = "Operational";
@@ -221,31 +236,44 @@ class DigitalTwin {
       localStorage.setItem("ecosync_smart_bins", JSON.stringify(this.binsData));
     }
 
-    this.renderSmartBinsTable();
-    this.updateRadarNodes();
-    this.selectBin(this.currentBinCode);
-
+    // 2. Direct instant DOM updates
+    const btn = document.getElementById("btn-service-bin");
     if (btn) {
       btn.disabled = false;
-      btn.textContent = `✓ ${this.currentBinCode} SERVICED & EMPTIED (0%)`;
+      btn.textContent = `✓ ${code} EMPTIED (0% - OPERATIONAL)`;
       btn.style.background = "#059669";
       btn.style.color = "#ffffff";
       btn.style.boxShadow = "0 0 18px rgba(16, 185, 129, 0.4)";
-      setTimeout(() => {
-        if (this.currentBinCode === bin?.code && bin?.current_fill_pct === 0) {
-          btn.textContent = `✓ ${this.currentBinCode} EMPTIED (0% - OPERATIONAL)`;
-        } else {
-          btn.textContent = "SERVICE / EMPTY BIN";
-          btn.style.background = "";
-          btn.style.color = "";
-          btn.style.boxShadow = "";
-        }
-      }, 2500);
     }
 
-    if (window.showEcoSyncToast) {
-      window.showEcoSyncToast(`✓ Station ${this.currentBinCode} (${bin ? bin.name : 'Bin'}) serviced! Fill level emptied from ${prevFill}% down to 0%. Collection alert cleared.`);
+    const elFillNum = document.getElementById("inspector-fill-num");
+    const elFillBar = document.getElementById("inspector-fill-bar");
+    const elBadge = document.getElementById("inspector-status-badge");
+    if (elFillNum) {
+      elFillNum.textContent = "0%";
+      elFillNum.style.color = "#10b981";
     }
+    if (elFillBar) {
+      elFillBar.style.width = "0%";
+      elFillBar.style.backgroundColor = "#10b981";
+    }
+    if (elBadge) {
+      elBadge.className = "tax-pill-badge tax-pill-green";
+      elBadge.textContent = "Operational (Normal)";
+    }
+
+    this.renderSmartBinsTable();
+    this.updateRadarNodes();
+
+    // 3. User feedback toast
+    if (window.showEcoSyncToast) {
+      window.showEcoSyncToast(`✓ Station ${code} (${bin ? bin.name : 'Smart Bin'}) emptied! Fill level: 0%. Collection alert cleared.`);
+    }
+
+    // 4. Non-blocking background API notification
+    try {
+      fetch(`/api/bins/${code}/service`, { method: "POST" }).catch(() => {});
+    } catch (e) {}
   }
 
   async dispatchRoute(routeId) {
@@ -407,3 +435,4 @@ class DigitalTwin {
 
 window.digitalTwin = new DigitalTwin();
 window.ecosyncTwin = window.digitalTwin;
+window.serviceCurrentBin = () => window.digitalTwin?.serviceCurrentBin();

@@ -40,6 +40,7 @@ class WasteScanner {
     this.virtualSampleIndex = 0;
     this.virtualSampleImages = [];
     this.confThreshold = 0.20;
+    this.streamFocus = "auto";
 
     this.init();
   }
@@ -49,6 +50,38 @@ class WasteScanner {
     this.initSlider();
     this.initCamera();
     this.preloadVirtualSamples();
+  }
+
+  setStreamFocus(mode) {
+    this.streamFocus = mode;
+    const label = document.getElementById("camera-focus-label");
+    const labels = {
+      auto: "Auto AI (Center Salience)",
+      green_veg: "🥬 Leaves & Veg (Wet)",
+      fruit: "🍎 Fruit Peels (Wet)",
+      bottle: "🍾 Bottles & Cans (Dry)",
+      electronic: "📱 Electronics & Mobile",
+      cardboard: "📦 Cardboard Box"
+    };
+    if (label) label.textContent = labels[mode] || mode;
+
+    document.querySelectorAll("[id^='pill-focus-']").forEach(pill => {
+      pill.classList.remove("active");
+    });
+    const pillMap = {
+      auto: "pill-focus-auto",
+      green_veg: "pill-focus-veg",
+      fruit: "pill-focus-fruit",
+      bottle: "pill-focus-bottle",
+      electronic: "pill-focus-elec",
+      cardboard: "pill-focus-box"
+    };
+    const activePill = document.getElementById(pillMap[mode]);
+    if (activePill) activePill.classList.add("active");
+
+    if (window.showEcoSyncToast) {
+      window.showEcoSyncToast(`Stream Focus: ${labels[mode] || mode}`);
+    }
   }
 
   preloadVirtualSamples() {
@@ -550,31 +583,49 @@ class WasteScanner {
     const imgData = ctx.getImageData(0, 0, sw, sh);
     const d = imgData.data;
 
+    // 1. Sample perimeter border pixels (outer 10%) to estimate background wall/room color
+    let bgSumR = 0, bgSumG = 0, bgSumB = 0, bgCount = 0;
+    for (let y = 0; y < sh; y += 3) {
+      for (let x = 0; x < sw; x += 3) {
+        if (x < sw * 0.12 || x > sw * 0.88 || y < sh * 0.12 || y > sh * 0.88) {
+          const idx = (y * sw + x) * 4;
+          bgSumR += d[idx]; bgSumG += d[idx + 1]; bgSumB += d[idx + 2];
+          bgCount++;
+        }
+      }
+    }
+    const bgR = bgCount > 0 ? bgSumR / bgCount : 128;
+    const bgG = bgCount > 0 ? bgSumG / bgCount : 128;
+    const bgB = bgCount > 0 ? bgSumB / bgCount : 128;
+
     let skinCount = 0;
     const skinXs = [];
     const skinYs = [];
 
     const counts = {
-      electronic: 0,
       green_veg: 0,
       yellow_banana: 0,
       red_apple: 0,
+      plastic_bottle: 0,
       blue_can: 0,
       cardboard: 0,
-      plastic_bottle: 0
+      electronic: 0
     };
 
     const itemPoints = {
-      electronic: [],
       green_veg: [],
       yellow_banana: [],
       red_apple: [],
+      plastic_bottle: [],
       blue_can: [],
       cardboard: [],
-      plastic_bottle: []
+      electronic: []
     };
 
+    const cx = sw / 2.0;
+    const cy = sh / 2.0;
     const step = 2;
+
     for (let y = 0; y < sh; y += step) {
       for (let x = 0; x < sw; x += step) {
         const idx = (y * sw + x) * 4;
@@ -585,82 +636,95 @@ class WasteScanner {
         const [hue, sat, val] = this.rgbToHsv(r, g, b);
 
         // Skin detection (Citizen operator)
-        const isSkin = (r > 65 && g > 38 && b > 18 && r > g && g >= b && (r - g) >= 8 && hue <= 52 && sat >= 0.12 && sat <= 0.68);
+        const isSkin = (r > 60 && g > 35 && b > 15 && r > g && g >= b && (r - g) >= 8 && hue <= 50 && sat >= 0.12 && sat <= 0.65);
         if (isSkin) {
           skinCount++;
           skinXs.push(x);
           skinYs.push(y);
-          continue;
+          continue; // Person skin is classified as Citizen Operator, not discarded waste
         }
 
-        // Ignore bright neutral background walls/curtains (lum > 180 and low sat)
-        if (lum > 175 && sat < 0.22) {
-          continue;
+        // Distance from background wall/lighting profile
+        const distBg = Math.hypot(r - bgR, g - bgG, b - bgB);
+        if (distBg < 26) {
+          continue; // Discard room wall / curtain / ceiling clutter!
         }
 
-        // Categorize non-skin foreground candidate pixels:
-        // 1. Green Leafy Vegetables / Fresh Produce (Wet Waste)
-        if (hue >= 50 && hue <= 170 && sat > 0.15 && val > 0.12) {
-          counts.green_veg += 1.5;
+        // Foreground center salience weighting
+        const normDx = (x - cx) / cx;
+        const normDy = (y - cy) / cy;
+        const distCenter = Math.hypot(normDx, normDy);
+        // Objects held in front of the camera occupy the central region
+        const centerWeight = Math.max(0.10, 1.40 - 0.95 * (distCenter * distCenter));
+
+        // 1. Green Leafy Vegetables & Wet Plant Greens (Wet Waste)
+        if (hue >= 52 && hue <= 168 && g > r * 1.04 && g > b * 1.04 && sat > 0.15 && val > 0.12) {
+          counts.green_veg += 2.8 * centerWeight;
           itemPoints.green_veg.push({ x, y });
         }
-        // 2. Bright Yellow Banana & Fruit Peels (Wet Waste)
-        else if (hue >= 32 && hue <= 68 && sat > 0.28 && val > 0.35) {
-          counts.yellow_banana += 1.4;
+        // 2. Yellow Banana & Citrus Fruit Peels (Wet Waste)
+        else if (hue >= 34 && hue <= 68 && sat > 0.28 && val > 0.32) {
+          counts.yellow_banana += 2.4 * centerWeight;
           itemPoints.yellow_banana.push({ x, y });
         }
-        // 3. Red Apple / Fruit Core / Fresh produce (Wet Waste)
-        else if ((hue < 25 || hue > 335) && sat > 0.28 && val > 0.22) {
-          counts.red_apple += 1.4;
+        // 3. Red Apple / Fruit Core / Fresh Produce (Wet Waste)
+        else if ((hue < 24 || hue > 336) && sat > 0.28 && val > 0.20) {
+          counts.red_apple += 2.4 * centerWeight;
           itemPoints.red_apple.push({ x, y });
         }
-        // 4. Blue Can / Metallic Beverage Can (Dry Waste)
-        else if (hue >= 195 && hue <= 250 && sat > 0.28) {
-          counts.blue_can += 1.3;
+        // 4. Aluminum / Red Bull Beverage Can (Dry Waste)
+        else if (hue >= 190 && hue <= 250 && sat > 0.25) {
+          counts.blue_can += 2.0 * centerWeight;
           itemPoints.blue_can.push({ x, y });
         }
-        // 5. Cardboard Packaging / Kraft tan (Dry Waste)
-        else if (hue >= 20 && hue <= 48 && sat >= 0.14 && sat <= 0.55 && val >= 0.25 && val <= 0.78) {
-          counts.cardboard += 1.2;
+        // 5. Cardboard Box / Kraft Paperboard (Dry Waste)
+        else if (hue >= 20 && hue <= 46 && sat >= 0.16 && sat <= 0.52 && val >= 0.25 && val <= 0.76) {
+          counts.cardboard += 1.8 * centerWeight;
           itemPoints.cardboard.push({ x, y });
         }
-        // 6. Electronic Device / Smartphone / Cable / Battery (E-Waste)
-        else if (lum < 95 && sat < 0.40) {
-          counts.electronic += 1.2;
+        // 6. Smartphone & Electronics (E-Waste: Dark rectangular screen/chassis in center)
+        else if (val < 0.32 && sat < 0.35 && distCenter < 0.65) {
+          counts.electronic += 1.7 * centerWeight;
           itemPoints.electronic.push({ x, y });
         }
-        // 7. Clear / Translucent Plastic Bottle (Dry Waste)
-        else if (sat < 0.22 && val > 0.45) {
-          counts.plastic_bottle += 1.0;
+        // 7. Clear / Translucent Plastic Bottle (Dry Waste: high lightness glint in center)
+        else if (sat < 0.20 && val > 0.70 && distCenter < 0.75) {
+          counts.plastic_bottle += 1.6 * centerWeight;
           itemPoints.plastic_bottle.push({ x, y });
         }
       }
     }
 
     // Determine top waste category:
-    let bestCat = "electronic";
-    let maxScore = -1;
-    for (const [cat, score] of Object.entries(counts)) {
-      if (score > maxScore) {
-        maxScore = score;
-        bestCat = cat;
+    let bestCat = "green_veg";
+
+    // Check if user set an explicit Stream Focus override
+    if (this.streamFocus && this.streamFocus !== "auto") {
+      if (this.streamFocus === "green_veg") bestCat = "green_veg";
+      else if (this.streamFocus === "fruit") {
+        bestCat = counts.yellow_banana >= counts.red_apple ? "yellow_banana" : "red_apple";
+      }
+      else if (this.streamFocus === "bottle") {
+        bestCat = counts.blue_can > counts.plastic_bottle ? "blue_can" : "plastic_bottle";
+      }
+      else if (this.streamFocus === "electronic") bestCat = "electronic";
+      else if (this.streamFocus === "cardboard") bestCat = "cardboard";
+    } else {
+      // Auto AI Selection based on maximum foreground center points
+      let maxScore = -1;
+      for (const [cat, score] of Object.entries(counts)) {
+        if (score > maxScore) {
+          maxScore = score;
+          bestCat = cat;
+        }
+      }
+      // If no strong cluster emerged, default to green leafy vegetables or bottle
+      if (maxScore < 8) {
+        bestCat = "green_veg";
       }
     }
 
     const CATALOG = {
-      electronic: {
-        raw_class: "electronic_cables",
-        object_identity: "Smartphone & Electronic Peripherals (E-Waste)",
-        candidate_material: "Lithium-Ion Battery, Silicon Circuitry & Polymer Casing",
-        sub_type: "Mobile Device / E-Waste",
-        suggested_category: "Electronic waste",
-        bin_target: "Orange Hub (E-Waste Kiosk)",
-        bin_color: "#d97706",
-        confidence: 0.958,
-        co2e_factor: 0.25,
-        prep: "Power off device completely. Drop off at certified electronic recycling kiosk or municipal e-waste depot.",
-        safety: "CRITICAL: NEVER toss into regular trash! Compactor crushing causes fatal lithium battery fires."
-      },
       green_veg: {
         raw_class: "leafy_vegetables",
         object_identity: "Leafy Greens & Fresh Vegetables (Wet Waste)",
@@ -671,7 +735,7 @@ class WasteScanner {
         bin_color: "#16a34a",
         confidence: 0.965,
         co2e_factor: 0.05,
-        prep: "Deposit in green compost bin. Rapid aerobic decomposition into rich organic bio-fertilizer.",
+        prep: "Deposit in green wet waste / organic compost bin. Rapid aerobic decomposition into rich bio-fertilizer.",
         safety: "Remove synthetic plastic wrap, rubber bands, or twist-ties before composting."
       },
       yellow_banana: {
@@ -700,6 +764,19 @@ class WasteScanner {
         prep: "Deposit in wet waste / compost container.",
         safety: "Remove synthetic produce stickers before placing in compost."
       },
+      plastic_bottle: {
+        raw_class: "bottle",
+        object_identity: "Bottles (Dry Waste)",
+        candidate_material: "PET #1 Plastic (Polyethylene Terephthalate)",
+        sub_type: "Beverage Bottle",
+        suggested_category: "Recyclable materials",
+        bin_target: "Blue Bin (Dry Recyclables)",
+        bin_color: "#2563eb",
+        confidence: 0.945,
+        co2e_factor: 0.08,
+        prep: "Empty all liquid, compress flat, and cap tightly.",
+        safety: "Ensure completely empty; liquids ruin dry paper recycling bales."
+      },
       blue_can: {
         raw_class: "redbull_can",
         object_identity: "Aluminum Beverage Can (Dry Waste)",
@@ -726,29 +803,29 @@ class WasteScanner {
         prep: "Flatten boxes completely to conserve bin volume. Remove plastic tape.",
         safety: "If soaked with kitchen grease, tear off greasy half for composting."
       },
-      plastic_bottle: {
-        raw_class: "bottle",
-        object_identity: "Bottles (Dry Waste)",
-        candidate_material: "PET #1 Plastic (Polyethylene Terephthalate)",
-        sub_type: "Beverage Bottle",
-        suggested_category: "Recyclable materials",
-        bin_target: "Blue Bin (Dry Recyclables)",
-        bin_color: "#2563eb",
-        confidence: 0.942,
-        co2e_factor: 0.08,
-        prep: "Empty all liquid, compress flat, and cap tightly.",
-        safety: "Ensure completely empty; liquids ruin dry paper recycling bales."
+      electronic: {
+        raw_class: "electronic_cables",
+        object_identity: "Smartphone & Electronic Peripherals (E-Waste)",
+        candidate_material: "Lithium-Ion Battery, Silicon Circuitry & Polymer Casing",
+        sub_type: "Mobile Device / E-Waste",
+        suggested_category: "Electronic waste",
+        bin_target: "Orange Hub (E-Waste Kiosk)",
+        bin_color: "#d97706",
+        confidence: 0.958,
+        co2e_factor: 0.25,
+        prep: "Power off device completely. Drop off at certified electronic recycling kiosk or municipal e-waste depot.",
+        safety: "CRITICAL: NEVER toss into regular trash! Compactor crushing causes fatal lithium battery fires."
       }
     };
 
-    const wasteSpec = CATALOG[bestCat] || CATALOG.electronic;
+    const wasteSpec = CATALOG[bestCat] || CATALOG.green_veg;
     const detections = [];
-    const hasCitizen = skinCount > (sw * sh * 0.02);
+    const hasCitizen = skinCount > (sw * sh * 0.018);
 
     const round4 = (v) => Math.round(v * 10000) / 10000;
 
-    // 1. Citizen Operator
-    if (hasCitizen && skinXs.length > 20) {
+    // 1. Citizen Operator (Person in frame)
+    if (hasCitizen && skinXs.length > 15) {
       skinXs.sort((a, b) => a - b);
       skinYs.sort((a, b) => a - b);
       const p5 = Math.floor(skinXs.length * 0.05);
@@ -804,11 +881,11 @@ class WasteScanner {
       });
     }
 
-    // 2. Main Waste Object
+    // 2. Main Waste Object (Target Item shown to camera)
     const pts = itemPoints[bestCat] || [];
-    let ox1 = 0.28, oy1 = 0.20, ox2 = 0.72, oy2 = 0.82;
+    let ox1 = 0.28, oy1 = 0.22, ox2 = 0.72, oy2 = 0.80;
 
-    if (pts.length > 25) {
+    if (pts.length > 20) {
       const xs = pts.map(p => p.x).sort((a, b) => a - b);
       const ys = pts.map(p => p.y).sort((a, b) => a - b);
       const p5 = Math.floor(xs.length * 0.05);
@@ -818,7 +895,7 @@ class WasteScanner {
       ox2 = Math.min(1.0, (xs[p95] + 10) / sw);
       oy2 = Math.min(1.0, (ys[p95] + 10) / sh);
     } else if (hasCitizen) {
-      ox1 = 0.30; oy1 = 0.25; ox2 = 0.76; oy2 = 0.80;
+      ox1 = 0.30; oy1 = 0.28; ox2 = 0.74; oy2 = 0.78;
     }
 
     const detIndex = detections.length + 1;

@@ -425,6 +425,22 @@
                 <span id="camera-status-text">LIVE WEBCAM ACTIVE</span>
               </div>
             </div>
+            <!-- Live Stream Accuracy Focus Selector -->
+            <div style="margin-top:12px; margin-bottom:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(0, 229, 153, 0.2); border-radius:var(--radius-sm);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:11px; font-family:var(--font-mono); color:var(--brand-neon); font-weight:700;">STREAM ACCURACY FOCUS:</span>
+                <span id="camera-focus-label" style="font-size:11px; color:#34d399; font-weight:600;">Auto AI (Center Salience)</span>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="btn-preset-pill active" id="pill-focus-auto" onclick="window.ecosyncScanner.setStreamFocus('auto')">🎯 Auto AI</button>
+                <button type="button" class="btn-preset-pill" id="pill-focus-veg" onclick="window.ecosyncScanner.setStreamFocus('green_veg')">🥬 Leaves & Veg (Wet)</button>
+                <button type="button" class="btn-preset-pill" id="pill-focus-fruit" onclick="window.ecosyncScanner.setStreamFocus('fruit')">🍎 Fruit Peels (Wet)</button>
+                <button type="button" class="btn-preset-pill" id="pill-focus-bottle" onclick="window.ecosyncScanner.setStreamFocus('bottle')">🍾 Bottles & Cans (Dry)</button>
+                <button type="button" class="btn-preset-pill" id="pill-focus-elec" onclick="window.ecosyncScanner.setStreamFocus('electronic')">📱 Electronics & Mobile</button>
+                <button type="button" class="btn-preset-pill" id="pill-focus-box" onclick="window.ecosyncScanner.setStreamFocus('cardboard')">📦 Cardboard Box</button>
+              </div>
+            </div>
+
             <div style="display:flex; gap:12px; margin-top:14px;">
               <button class="btn-hero-primary" id="btn-camera-capture" style="flex:1; justify-content:center; padding:12px; font-size:14px;">
                 📸 Snap & Detect Frame
@@ -564,7 +580,7 @@
             </div>
           </div>
 
-          <button class="btn-service-bin" id="btn-service-bin" onclick="window.ecosyncTwin.serviceCurrentBin()">
+          <button class="btn-service-bin" id="btn-service-bin" onclick="window.serviceCurrentBin ? window.serviceCurrentBin() : (window.digitalTwin ? window.digitalTwin.serviceCurrentBin() : (window.ecosyncTwin && window.ecosyncTwin.serviceCurrentBin()))">
             SERVICE / EMPTY BIN
           </button>
         </div>

@@ -353,9 +353,59 @@ def analyze_crop_features(crop_img: Image.Image, filename: str = "", raw_coco: s
         
         hue, sat, val = rgb_to_hsv(mean_r, mean_g, mean_b)
         
-        # Specular/Metallic Sheen: high standard deviation across channels with silver/gray tone
-        is_metallic = (sat < 0.22 and std_r > 45 and val > 0.40)
-        
+        # Grid sample non-skin pixels across the cropped item to accurately find object color
+        green_pts = 0
+        yellow_pts = 0
+        red_pts = 0
+        blue_can_pts = 0
+        cardboard_pts = 0
+        electronic_pts = 0
+        bottle_pts = 0
+
+        step_s = max(1, min(w, h) // 25)
+        for py in range(0, h, step_s):
+            for px in range(0, w, step_s):
+                pr, pg, pb = rgb.getpixel((px, py))
+                phue, psat, pval = rgb_to_hsv(pr, pg, pb)
+                # Ignore skin pixels from hands/fingers holding the item
+                if pr > 60 and pg > 35 and pb > 15 and pr > pg and pg >= pb and (pr - pg) >= 8 and phue <= 50 and 0.12 <= psat <= 0.65:
+                    continue
+                # Green leaves & vegetables (Wet Waste)
+                if 52 <= phue <= 168 and pg > pr * 1.04 and pg > pb * 1.04 and psat > 0.15 and pval > 0.12:
+                    green_pts += 1
+                # Yellow banana & fruit peels (Wet Waste)
+                elif 34 <= phue <= 68 and psat > 0.28 and pval > 0.32:
+                    yellow_pts += 1
+                # Red fruit / apple / tomato (Wet Waste)
+                elif (phue < 24 or phue > 336) and psat > 0.28 and pval > 0.20:
+                    red_pts += 1
+                # Blue / Metallic beverage can (Dry Waste)
+                elif 190 <= phue <= 250 and psat > 0.25:
+                    blue_can_pts += 1
+                # Cardboard packaging (Dry Waste)
+                elif 20 <= phue <= 46 and 0.16 <= psat <= 0.52 and 0.25 <= pval <= 0.76:
+                    cardboard_pts += 1
+                # Electronic dark surface / cables / phone (E-Waste)
+                elif pval < 0.32 and psat < 0.35:
+                    electronic_pts += 1
+                # Translucent / clear plastic bottle (Dry Waste)
+                elif psat < 0.20 and pval > 0.70:
+                    bottle_pts += 1
+
+        if green_pts >= 4 and green_pts >= yellow_pts and green_pts >= red_pts and green_pts >= blue_can_pts:
+            return "leafy_vegetables"
+        if yellow_pts >= 4 and yellow_pts >= red_pts:
+            return "banana"
+        if red_pts >= 4:
+            return "apple"
+        if blue_can_pts >= 4:
+            return "redbull_can"
+        if cardboard_pts >= 4:
+            return "cardboard_box"
+        if electronic_pts >= 6:
+            return "electronic_cables"
+
+        # Fallback to mean color properties
         # 1. Green Leafy Vegetables & Wet Plant Scraps (High priority for organic kitchen waste)
         if (hue >= 50 and hue <= 172) and sat > 0.15 and val > 0.12:
             return "leafy_vegetables"
@@ -370,7 +420,6 @@ def analyze_crop_features(crop_img: Image.Image, filename: str = "", raw_coco: s
             
         # 4. Vivid Red / Crimson -> Doritos bag or Red Apple
         if (hue < 22 or hue > 338) and sat > 0.38 and val > 0.35:
-            # Round aspect ratio (0.75 - 1.35) -> Apple, else Doritos packaging pouch
             return "apple" if 0.75 <= aspect <= 1.35 else "doritos"
             
         # 5. Kraft Brown / Tan -> Corrugated Cardboard Box
